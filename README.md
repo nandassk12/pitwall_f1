@@ -2,6 +2,8 @@
 
 A full-stack telemetry dashboard that pulls official Formula 1 session data, computes real-time car physics, and renders them on a live engineering console interface. Telemetry is pre-cached on startup so the dashboard streams with under 150ms lag when switching between drivers.
 
+![F1 Pitwall Dashboard](dashboard-preview.png)
+
 ---
 
 ## 📁 Project Structure
