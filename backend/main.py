@@ -2,166 +2,33 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 import fastf1
-import numpy as np
-import pandas as pd
 import os
+import psutil
 
-# Global Framework Storage Matrices
-SESSION_OBJECT = None
-POLE_TELEMETRY_TRACK = []
-DRIVERS_ENGINEERING_CACHE = {}
-LIVE_STANDINGS_TOWER = []
-METEO_TRACK_DATA = {}
-
-
-def load_and_compile_grand_prix_matrices():
-    global SESSION_OBJECT, POLE_TELEMETRY_TRACK, DRIVERS_ENGINEERING_CACHE, LIVE_STANDINGS_TOWER, METEO_TRACK_DATA
-    print("🏎️ Ingesting heavy physical metrics from FastF1 servers...")
-
-    try:
-        # Loading Monaco 2023 Race session dataset for multi-lap tire strategies and weather
-        session = fastf1.get_session(2023, 'Monaco', 'R')
-        session.load(laps=True, telemetry=True, weather=True)
-        SESSION_OBJECT = session
-
-        # 1. PARSE CRITICAL WEATHER INFORMATION
-        try:
-            weather_df = session.weather_data
-            if not weather_df.empty:
-                latest_weather = weather_df.iloc[-1]
-                METEO_TRACK_DATA = {
-                    "airTemp": float(latest_weather['AirTemp']),
-                    "trackTemp": float(latest_weather['TrackTemp']),
-                    "humidity": float(latest_weather['Humidity']),
-                    "rainfall": bool(latest_weather['Rainfall']),
-                    "rainRiskPercent": 90 if latest_weather['Humidity'] > 78 and not latest_weather['Rainfall'] else 15
-                }
-        except Exception as we:
-            print(f"⚠️ Weather stream parsing skipped: {we}")
-            METEO_TRACK_DATA = {
-                "airTemp": 24.5,
-                "trackTemp": 36.2,
-                "humidity": 62.0,
-                "rainfall": False,
-                "rainRiskPercent": 10
-            }
-
-        # 2. GENERATE PERFECT RACING LINE & BRAKING POINT MATRIX (POLE POSITION LAP BASELINE)
-        pole_lap = session.laps.pick_fastest()
-        pole_tel = pole_lap.get_telemetry().interpolate().reset_index(drop=True)
-
-        for idx, row in pole_tel.iterrows():
-            POLE_TELEMETRY_TRACK.append({
-                "x": float(row['X']),
-                "y": float(row['Y']),
-                "speed": int(row['Speed']),
-                # FIX: Brake is boolean (0/1) in FastF1 — direct bool cast is sufficient
-                "isIdealBrakingZone": bool(row['Brake'] and row['Speed'] > 110)
-            })
-
-        # 3. COMPUTE VEHICLE DYNAMICS & AERODYNAMICS VECTOR CHANNELS FOR TOP DRIVERS
-        top_drivers = session.results.head(8)
-
-        # FIX: Use enumerate so enum_rank is always 0-based sequential (iterrows index ≠ position)
-        for enum_rank, (_, row) in enumerate(top_drivers.iterrows()):
-            drv_code = row['Abbreviation']
-
-            # FIX: P1 label corrected from "INTERVAL" to "LEADER"
-            gap_string = "LEADER" if enum_rank == 0 else f"+{round(np.random.uniform(1.2, 14.8), 3)}s"
-
-            LIVE_STANDINGS_TOWER.append({
-                "pos": enum_rank + 1,           # FIX: sequential position, not DataFrame index
-                "no": int(row['DriverNumber']),
-                "name": drv_code,
-                "team": row['TeamName'],
-                "gap": gap_string
-            })
-
-            try:
-                # Capture the driver's representative fastest race lap footprint
-                drv_lap = session.laps.pick_driver(drv_code).pick_fastest()
-                tel = drv_lap.get_telemetry().interpolate().reset_index(drop=True)
-
-                # Derive physical mathematical vectors
-                speeds_ms = tel['Speed'] / 3.6
-                delta_v = np.diff(speeds_ms, prepend=speeds_ms.iloc[0])
-                long_g = np.clip(delta_v * 0.45, -5.5, 3.2)  # Mechanical/Aero deceleration load tracking
-
-                # FIX: Guard TyreLife NaN before int() cast — crashes otherwise
-                tyre_age_laps = int(drv_lap['TyreLife']) if pd.notna(drv_lap.get('TyreLife')) else 0
-
-                # FIX: Resolve compound safely — Series has no .get(); use index membership check
-                compound_val = drv_lap['Compound'] if 'Compound' in drv_lap.index else 'UNKNOWN'
-
-                # Pre-build tyre compound label once (TyreLife is per-lap constant, not per-point)
-                tyre_compound_label = f"{compound_val} (L{tyre_age_laps})"
-
-                driver_array_packet = []
-                pole_tel_len = len(pole_tel)
-
-                for i in range(len(tel)):
-                    speed_val = int(tel['Speed'].iloc[i])
-                    throttle_val = int(tel['Throttle'].iloc[i])
-                    brake_val = int(tel['Brake'].iloc[i])
-
-                    # MATHEMATICAL HANDLING ESTIMATORS (Slip Angle approximations)
-                    is_understeer = bool(throttle_val > 70 and speed_val > 160 and i % 14 == 0)
-                    is_oversteer = bool(brake_val == 0 and throttle_val < 15 and speed_val > 130 and i % 19 == 0)
-                    handling_state = "UNDERSTEER" if is_understeer else "OVERSTEER" if is_oversteer else "NEUTRAL"
-
-                    # AERODYNAMICS DOWNFORCE CALCULATION: Scales quadratically relative to velocity
-                    aero_downforce = int((speed_val ** 2) * 0.014)
-
-                    # STRATEGY MODEL: Tyre wear degradation
-                    estimated_tyre_wear = float(round(min(98.5, (tyre_age_laps * 1.8) + (speed_val * 0.04)), 1))
-
-                    # FIX: Guard pole_tel reference speed — use clamped index to avoid out-of-bounds
-                    ref_speed_idx = min(i, pole_tel_len - 1)
-                    ref_speed = int(pole_tel['Speed'].iloc[ref_speed_idx])
-
-                    driver_array_packet.append({
-                        "time": i,
-                        "x": float(tel['X'].iloc[i]),
-                        "y": float(tel['Y'].iloc[i]),
-                        "speed": speed_val,
-                        "refSpeed": ref_speed,          # FIX: safe clamped index
-                        "throttle": throttle_val,
-                        "brake": brake_val,
-                        "rpm": int(tel['RPM'].iloc[i]) if 'RPM' in tel.columns else 11400,
-                        "gear": int(tel['nGear'].iloc[i]) if 'nGear' in tel.columns else 5,
-                        "handling": handling_state,
-                        "downforceKg": aero_downforce,
-                        "tyreWearPercent": estimated_tyre_wear,
-                        "tyreCompound": tyre_compound_label,    # FIX: prebuilt, no .get() on Series
-                        "tyreAge": tyre_age_laps,
-                        "longG": float(round(long_g[i], 2))
-                    })
-
-                DRIVERS_ENGINEERING_CACHE[drv_code] = driver_array_packet
-
-            except Exception as drv_ex:
-                print(f"⚠️ Track data skipped for target {drv_code}: {drv_ex}")
-
-        print("🏁 Advanced Aerodynamics & Handling Matrices Deployed Successfully!")
-    except Exception as e:
-        print(f"❌ Critical System Fault during initialization: {e}")
+# Import all live state from session module — shared references to the same
+# mutable dicts/lists so mutations in session.py are visible here instantly.
+import session as sess
+from session import session_router
+from circuits import circuits_router
+from simulator import sim_router
+from panels import panels_router
+from charts import charts_router
+from analytics_routes import analytics_router
 
 
-# FIX: @app.on_event("startup") is deprecated in FastAPI ≥ 0.93 — replaced with lifespan context manager
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    load_and_compile_grand_prix_matrices()
+    # On startup: enable disk cache only — no hardcoded session auto-load.
+    # First load happens when the user selects a session via SessionSelector.
+    cache_dir = './f1_cache'
+    os.makedirs(cache_dir, exist_ok=True)
+    fastf1.Cache.enable_cache(cache_dir)
+    print("[Core] F1 Pitwall ready - awaiting session selection via dashboard")
     yield
-
-
-# Persistent Cache System configuration
-cache_dir = './f1_cache'
-os.makedirs(cache_dir, exist_ok=True)
-fastf1.Cache.enable_cache(cache_dir)
 
 app = FastAPI(title="F1 Pitwall Advanced Engineering Telemetry Core", lifespan=lifespan)
 
-# Enable wide CORS so your local Vite engine can poll data streams safely
+# Enable CORS so the Vite dev server (port 3000) can reach this API (port 8000)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -169,28 +36,140 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Mount the dynamic session router (years / calendar / types / load endpoints)
+app.include_router(session_router)
+
+# Mount the circuit geometry + multi-driver positions router
+app.include_router(circuits_router)
+
+# Mount the race simulation engine router
+app.include_router(sim_router)
+
+# Mount the session analysis panels router
+app.include_router(panels_router)
+
+# Mount the advanced charts router
+app.include_router(charts_router)
+
+# Mount the analytics router
+app.include_router(analytics_router)
+
+
+# ── Status ────────────────────────────────────────────────────────────────────
+
+@app.get("/api/status")
+def get_status():
+    """Lightweight heartbeat — poll at most every 5 seconds from frontend."""
+    process = psutil.Process(os.getpid())
+    mem_mb  = process.memory_info().rss / 1024 / 1024
+    return {
+        "sessionLoaded":  sess.SESSION_OBJECT is not None,
+        "currentSession": sess.CURRENT_SESSION_LABEL,
+        "loading":        sess.SESSION_LOADING,
+        "memoryMB":       round(mem_mb, 1),
+    }
+
+
+# ── Telemetry data endpoints ──────────────────────────────────────────────────
 
 @app.get("/api/drivers")
 def get_standings_tower():
-    return LIVE_STANDINGS_TOWER
+    return sess.LIVE_STANDINGS_TOWER
 
 
 @app.get("/api/circuit-geometry")
 def get_static_circuit_path():
-    return POLE_TELEMETRY_TRACK
+    return sess.POLE_TELEMETRY_TRACK
 
 
 @app.get("/api/weather")
 def get_live_weather():
-    return METEO_TRACK_DATA
+    return sess.METEO_TRACK_DATA
+
+
+@app.get("/api/race-control")
+def get_race_control():
+    """Returns pre-fetched OpenF1 Race Control messages for the loaded session.
+    Available for 2023+ sessions only. Returns empty list for earlier years
+    or if the OpenF1 session_key could not be resolved."""
+    return {
+        "sessionKey":  sess.OPENF1_SESSION_KEY,
+        "available":   len(sess.RACE_CONTROL_MESSAGES) > 0,
+        "messages":    sess.RACE_CONTROL_MESSAGES,
+        "totalMessages": len(sess.RACE_CONTROL_MESSAGES),
+    }
 
 
 @app.get("/api/telemetry")
 def streaming_pipeline_gateway(driver: str = "VER", index: int = 0):
-    """Slices out rolling frames of structural data array rows for telemetry visualization"""
-    stream = DRIVERS_ENGINEERING_CACHE.get(driver, DRIVERS_ENGINEERING_CACHE.get("VER", []))
+    """Slices a rolling 45-point frame from the driver's pre-cached telemetry array.
+    Wraps around end-of-stream so the chart always has data regardless of index."""
+    cache = sess.DRIVERS_ENGINEERING_CACHE
+    if not cache:
+        return {"frames": [], "nextIndex": 0}
+    # Fall back to first cached driver if requested driver not yet loaded
+    stream = cache.get(driver) or cache.get(next(iter(cache), None), [])
     if not stream:
-        return []
-    start = index % len(stream)
-    return stream[start:start + 45]  # Slices a continuous frame of 45 structural elements
+        return {"frames": [], "nextIndex": 0}
+    n     = len(stream)
+    start = index % n
+    end   = start + 45
+    window = 45
+    next_idx = (index + window) % n
+    if end <= n:
+        frames_list = stream[start:end]
+    else:
+        # Wrap around: combine tail + head to always return exactly 45 points
+        frames_list = stream[start:] + stream[:end - n]
+    return {"frames": frames_list, "nextIndex": next_idx}
 
+
+@app.get("/api/telemetry/multi")
+def get_multi_telemetry(
+    drivers: list[str] = Query(...),   # e.g. ?drivers=VER&drivers=HAM
+    index:   int = 0,
+    window:  int = 45,
+):
+    """
+    Returns a rolling telemetry window for up to 4 drivers simultaneously.
+    Used by the lap comparison / overlay chart.
+
+    Response shape:
+    {
+      "VER": {"speed": [...], "throttle": [...], "brake": [...],
+              "rpm": [...], "gear": [...], "teamColor": "#3671C6"},
+      "HAM": { ... },
+      ...
+    }
+    """
+    from simulator import TEAM_COLORS
+    result   = {}
+    cache    = sess.DRIVERS_ENGINEERING_CACHE
+    standings = sess.LIVE_STANDINGS_TOWER
+    team_lookup = {s['name']: s['team'] for s in standings}
+
+    for code in drivers[:4]:   # hard cap at 4
+        frames = cache.get(code)
+        if not frames:
+            continue
+        n     = len(frames)
+        start = index % n
+        end   = start + window
+        if end <= n:
+            slice_ = frames[start:end]
+        else:
+            slice_ = frames[start:] + frames[:end - n]
+
+        team  = team_lookup.get(code, '')
+        color = TEAM_COLORS.get(team, '#888899')
+
+        result[code] = {
+            "speed":     [f.get('speed',    0) for f in slice_],
+            "throttle":  [f.get('throttle', 0) for f in slice_],
+            "brake":     [f.get('brake',    0) for f in slice_],
+            "rpm":       [f.get('rpm',      0) for f in slice_],
+            "gear":      [f.get('gear',     0) for f in slice_],
+            "teamColor": color,
+        }
+
+    return result
