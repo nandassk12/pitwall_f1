@@ -27,9 +27,9 @@ export default function TimingTower({ drivers = [], activeDriver = '', setActive
 
   return (
     <div style={{
-      backgroundColor: '#09090d',
+      backgroundColor: 'var(--bg-secondary)',
       borderRadius: '6px',
-      border: '1px solid #14141f',
+      border: '1px solid var(--border-color)',
       padding: '12px',
       display: 'flex',
       flexDirection: 'column',
@@ -43,7 +43,7 @@ export default function TimingTower({ drivers = [], activeDriver = '', setActive
           width: 4px;
         }
         .timing-tower-list::-webkit-scrollbar-track {
-          background: #09090d;
+          background: var(--bg-secondary);
         }
         .timing-tower-list::-webkit-scrollbar-thumb {
           background: #1c1c28;
@@ -60,7 +60,7 @@ export default function TimingTower({ drivers = [], activeDriver = '', setActive
         fontWeight: 'bold', 
         color: '#444552', 
         paddingBottom: '8px', 
-        borderBottom: '1px solid #14141f',
+        borderBottom: '1px solid var(--border-color)',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center'
@@ -75,7 +75,7 @@ export default function TimingTower({ drivers = [], activeDriver = '', setActive
       {/* ACTIVE DRIVER FOCUS CARD */}
       {activeDrvObj && (
         <div style={{
-          backgroundColor: '#0c0c12',
+          backgroundColor: 'var(--bg-secondary)',
           border: `1px solid ${activeColor}40`,
           borderRadius: '6px',
           padding: '10px',
@@ -158,7 +158,7 @@ export default function TimingTower({ drivers = [], activeDriver = '', setActive
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 padding: '8px 10px',
-                backgroundColor: isSelected ? '#14141f' : '#0c0c12',
+                backgroundColor: isSelected ? 'var(--border-color)' : '#0c0c12',
                 borderLeft: `4px solid ${teamColor}`,
                 borderRadius: '4px',
                 cursor: hasTel ? 'pointer' : 'not-allowed',

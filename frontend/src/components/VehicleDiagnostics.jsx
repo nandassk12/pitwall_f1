@@ -51,8 +51,8 @@ export default function VehicleDiagnostics({
       {/* DOMINANCE LEGEND */}
       {dominanceData && (
         <div style={{
-          backgroundColor: '#09090d',
-          border: '1px solid #14141f',
+          backgroundColor: 'var(--bg-secondary)',
+          border: '1px solid var(--border-color)',
           borderRadius: '6px',
           padding: '10px',
           display: 'flex',
@@ -85,7 +85,7 @@ export default function VehicleDiagnostics({
       )}
 
       {/* CHASSIS HANDLING INDICATOR */}
-      <div style={{ backgroundColor: '#09090d', border: '1px solid #14141f', borderRadius: '6px', padding: '12px' }}>
+      <div style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '12px' }}>
         <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#555666', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '4px' }}><ShieldAlert size={12}/> HANDLING STATE</div>
         <div style={{
           backgroundColor: liveTick.handling === "NEUTRAL" ? "#131c13" : "#241313",
@@ -97,7 +97,7 @@ export default function VehicleDiagnostics({
       </div>
 
       {/* TYRE DEGRADATION METRICS */}
-      <div style={{ backgroundColor: '#09090d', border: '1px solid #14141f', borderRadius: '6px', padding: '12px' }}>
+      <div style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '12px' }}>
         <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#555666', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '4px' }}><AlertTriangle size={12}/> TYRE DEGRADATION PROFILE</div>
         <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#fff' }}>
           COMPOUND: <span style={{ color: '#ffea00' }}>{liveTick.tyreCompound}</span>

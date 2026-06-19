@@ -1,12 +1,181 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>F1Pitwall Control Core</title>
-    <script type="module" crossorigin src="/assets/index-DerPEhTq.js"></script>
-  </head>
-  <body style="margin: 0; background-color: #0b0b0f;">
-    <div id="root"></div>
-  </body>
+<html class="dark" lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>F1 PITWALL | Professional Grade Telemetry</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700;800;900&display=swap"
+    rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+    rel="stylesheet" />
+  <!-- Tailwind Config -->
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "tertiary-container": "#0078a6",
+            "on-primary-container": "#fff2f0",
+            "inverse-primary": "#c00500",
+            "tertiary-fixed-dim": "#81cfff",
+            "surface-container-lowest": "#0c0e10",
+            "surface-container-highest": "#333537",
+            "on-tertiary": "#00344b",
+            "surface-dim": "#111415",
+            "on-secondary-fixed-variant": "#454655",
+            "on-secondary-fixed": "#191b28",
+            "inverse-on-surface": "#2f3132",
+            "inverse-surface": "#e2e2e4",
+            surface: "#111415",
+            "secondary-container": "#454655",
+            "on-surface": "#888181",
+            "on-primary": "#680200",
+            "on-error": "#690005",
+            "primary-fixed": "#ffdad4",
+            "secondary-fixed-dim": "#c6c5d7",
+            "on-surface-variant": "#a8a8b2",
+            "on-tertiary-fixed": "#001e2d",
+            "on-primary-fixed": "#410100",
+            "tertiary-fixed": "#c6e7ff",
+            "primary-container": "#e10600",
+            "on-background": "#e2e2e4",
+            "surface-container": "#1e2021",
+            "error-container": "#93000a",
+            "on-error-container": "#ffdad6",
+            error: "#ffb4ab",
+            "surface-bright": "#37393b",
+            secondary: "#c6c5d7",
+            "surface-container-low": "#1a1c1d",
+            "surface-variant": "#333537",
+            "on-primary-fixed-variant": "#930300",
+            "outline-variant": "#5e3f3a",
+            "primary-fixed-dim": "#e10600",
+            "on-secondary": "#2e2f3d",
+            "surface-tint": "#e10600",
+            background: "#111415",
+            "on-tertiary-fixed-variant": "#004c6b",
+            "on-tertiary-container": "#edf6ff",
+            "on-secondary-container": "#b4b3c5",
+            tertiary: "#81cfff",
+            primary: "#e10600",
+            "surface-container-high": "#282a2c",
+            outline: "#af8781",
+            "secondary-fixed": "#e2e1f4"
+          },
+          borderRadius: {
+            DEFAULT: "0.125rem",
+            lg: "0.25rem",
+            xl: "0.5rem",
+            full: "0.75rem"
+          },
+          spacing: {
+            gutter: "1px",
+            "container-padding": "16px",
+            "edge-margin": "24px",
+            "stack-gap": "8px",
+            "navbar-height": "48px",
+            "baseline-grid": "2px"
+          },
+          fontFamily: {
+            "body-lg": ["JetBrains Mono", "monospace"],
+            "label-caps": ["JetBrains Mono", "monospace"],
+            "display-lg": ["JetBrains Mono", "monospace"],
+            "data-mono": ["JetBrains Mono", "monospace"],
+            "body-md": ["JetBrains Mono", "monospace"],
+            "display-lg-mobile": ["JetBrains Mono", "monospace"],
+            "headline-md": ["JetBrains Mono", "monospace"],
+            "headline-sm": ["JetBrains Mono", "monospace"]
+          },
+          fontSize: {
+            "body-lg": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+            "label-caps": ["11px", { lineHeight: "16px", letterSpacing: "3px", fontWeight: "bold" }],
+            "display-lg": ["42px", { lineHeight: "1.15", letterSpacing: "2px", fontWeight: "900" }],
+            "data-mono": ["11px", { lineHeight: "16px", fontWeight: "bold" }],
+            "body-md": ["12px", { lineHeight: "18px", fontWeight: "400" }],
+            "display-lg-mobile": ["28px", { lineHeight: "1.2", fontWeight: "900" }],
+            "headline-md": ["24px", { lineHeight: "32px", letterSpacing: "1px", fontWeight: "900" }],
+            "headline-sm": ["18px", { lineHeight: "24px", fontWeight: "700" }]
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body {
+      background-color: #040406;
+      color: #e5e1e6;
+      margin: 0;
+    }
+
+    .technical-grid {
+      background-image:
+        linear-gradient(to right, #1a1a24 1px, transparent 1px),
+        linear-gradient(to bottom, #1a1a24 1px, transparent 1px);
+      background-size: 60px 60px;
+    }
+
+    .scanline {
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(to right, transparent, rgba(225, 6, 0, 0.2), transparent);
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      animation: scan 12s linear infinite;
+    }
+
+    @keyframes scan {
+      0% {
+        top: 0;
+      }
+
+      100% {
+        top: 100%;
+      }
+    }
+
+    .glitch-text:hover {
+      animation: glitch 0.3s cubic-bezier(.25, .46, .45, .94) both infinite;
+    }
+
+    @keyframes glitch {
+      0% {
+        transform: translate(0);
+      }
+
+      20% {
+        transform: translate(-1px, 1px);
+      }
+
+      40% {
+        transform: translate(-1px, -1px);
+      }
+
+      60% {
+        transform: translate(1px, 1px);
+      }
+
+      80% {
+        transform: translate(1px, -1px);
+      }
+
+      100% {
+        transform: translate(0);
+      }
+    }
+  </style>
+  <script type="module" crossorigin src="/assets/index-fM2LaQU5.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-DoVOdoiF.css">
+</head>
+
+<body class="font-body-md selection:bg-primary-container selection:text-white">
+  <div id="root"></div>
+</body>
+
 </html>

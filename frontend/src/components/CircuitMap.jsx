@@ -394,7 +394,7 @@ export default function CircuitMap({
                   style={{ transition: 'transform 0.8s ease' }}>
                   <circle r={r}
                     fill={color}
-                    stroke={isActive ? '#ffffff' : '#040406'}
+                    stroke={isActive ? '#ffffff' : 'var(--bg-primary)'}
                     strokeWidth={isActive ? 1.5 : 0.8}
                     filter={isActive ? 'url(#glow-active)' : undefined} />
                 </g>
@@ -429,7 +429,7 @@ export default function CircuitMap({
             return (
               <g style={{ pointerEvents: 'none' }}>
                 <rect x={rx} y={ry} width={90} height={34}
-                  rx={3} fill="#09090d" stroke="#2a2a3e" strokeWidth={1} />
+                  rx={3} fill="var(--bg-secondary)" stroke="#2a2a3e" strokeWidth={1} />
                 <text x={rx + 7} y={ry + 13} fontSize={9}
                   fontFamily="monospace" fontWeight="bold" fill={hoveredPos.teamColor}>
                   {hoveredPos.driver}{hoveredPos.carNumber ? `  #${hoveredPos.carNumber}` : ''}
@@ -450,8 +450,8 @@ export default function CircuitMap({
 
 // ── Style helpers ─────────────────────────────────────────────────────────────
 const cardStyle = {
-  backgroundColor: '#09090d',
-  border:          '1px solid #14141f',
+  backgroundColor: 'var(--bg-secondary)',
+  border:          '1px solid var(--border-color)',
   borderRadius:    '6px',
   padding:         '12px',
   display:         'flex',
@@ -474,8 +474,8 @@ const headerStyle = {
 const svgWrapStyle = (w, h) => ({
   width:           `${w}px`,
   height:          `${h}px`,
-  backgroundColor: '#040406',
+  backgroundColor: 'var(--bg-primary)',
   borderRadius:    '4px',
-  border:          '1px solid #14141f',
+  border:          '1px solid var(--border-color)',
   overflow:        'hidden',
 });

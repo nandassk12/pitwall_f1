@@ -93,8 +93,8 @@ export default function TrackDominanceMap() {
 
   return (
     <div style={{
-      backgroundColor: '#09090d',
-      border: '1px solid #14141f',
+      backgroundColor: 'var(--bg-secondary)',
+      border: '1px solid var(--border-color)',
       borderRadius: '6px',
       padding: '15px',
       fontFamily: 'monospace',
@@ -123,7 +123,7 @@ export default function TrackDominanceMap() {
                     gap:'15px', alignItems:'start' }}>
 
         {/* ── LEFT: SVG Circuit Map ── */}
-        <div style={{ backgroundColor:'#040406', border:'1px solid #14141f',
+        <div style={{ backgroundColor:'var(--bg-primary)', border:'1px solid var(--border-color)',
                       borderRadius:'6px', padding:'10px', position:'relative' }}>
 
           <svg
@@ -207,7 +207,7 @@ export default function TrackDominanceMap() {
         </div>
 
         {/* ── RIGHT: Ranking Panel ── */}
-        <div style={{ backgroundColor:'#040406', border:'1px solid #14141f',
+        <div style={{ backgroundColor:'var(--bg-primary)', border:'1px solid var(--border-color)',
                       borderRadius:'6px', padding:'12px',
                       minHeight:'300px' }}>
 
@@ -221,7 +221,7 @@ export default function TrackDominanceMap() {
             <>
               {/* Section header */}
               <div style={{ marginBottom:'12px',
-                            borderBottom:'1px solid #14141f', paddingBottom:'8px' }}>
+                            borderBottom:'1px solid var(--border-color)', paddingBottom:'8px' }}>
                 <div style={{ color:'#fff', fontWeight:'bold', fontSize:'16px' }}>
                   {activeSegData.label}
                 </div>
@@ -249,7 +249,7 @@ export default function TrackDominanceMap() {
                         gap:'8px',
                         padding:'5px 6px',
                         marginBottom:'2px',
-                        backgroundColor: isP1 ? '#0d0d14' : 'transparent',
+                        backgroundColor: isP1 ? 'var(--bg-tertiary)' : 'transparent',
                         borderLeft: `3px solid ${isP1 ? entry.teamColor : 'transparent'}`,
                         borderRadius:'3px',
                       }}
@@ -327,7 +327,7 @@ export default function TrackDominanceMap() {
       </div>
 
       {/* ── DRIVER SUMMARY STRIP ── */}
-      <div style={{ marginTop:'15px', borderTop:'1px solid #14141f',
+      <div style={{ marginTop:'15px', borderTop:'1px solid var(--border-color)',
                     paddingTop:'10px' }}>
         <div style={{ fontSize:'9px', color:'#555666', marginBottom:'8px',
                       letterSpacing:'1px' }}>

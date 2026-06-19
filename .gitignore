@@ -5,3 +5,5 @@ __pycache__/
 .DS_Store
 f1_cache/
 backend/venv/
+*.txt
+bg image.png

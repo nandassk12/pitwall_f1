@@ -38,7 +38,7 @@ const BarCustomTooltip = ({ active, payload }) => {
     const isLeader = data.paceDelta === 0;
     return (
       <div style={{
-        backgroundColor: '#0d0d14',
+        backgroundColor: 'var(--bg-tertiary)',
         border: '1px solid #1c1c28',
         padding: '10px',
         borderRadius: '6px',
@@ -65,7 +65,7 @@ const ScatterCustomTooltip = ({ active, payload }) => {
     const data = payload[0].payload;
     return (
       <div style={{
-        backgroundColor: '#0d0d14',
+        backgroundColor: 'var(--bg-tertiary)',
         border: '1px solid #1c1c28',
         padding: '10px',
         borderRadius: '6px',
@@ -91,7 +91,7 @@ const RenderCustomDot = (props) => {
   const color = payload.teamColor || '#888899';
   return (
     <g>
-      <circle cx={cx} cy={cy} r={5} fill={color} stroke="#09090d" strokeWidth={1.5} />
+      <circle cx={cx} cy={cy} r={5} fill={color} stroke="var(--bg-secondary)" strokeWidth={1.5} />
       <text
         x={cx + 8}
         y={cy + 3}
@@ -146,10 +146,10 @@ export default function RacePaceAnalysis() {
       display: 'flex',
       flexDirection: 'column',
       gap: '16px',
-      backgroundColor: '#0d0d14',
+      backgroundColor: 'var(--bg-tertiary)',
       padding: '16px',
       borderRadius: '6px',
-      border: '1px solid #14141f',
+      border: '1px solid var(--border-color)',
       fontFamily: 'monospace',
     }}>
       {/* 1. HEADER ROW */}
@@ -157,7 +157,7 @@ export default function RacePaceAnalysis() {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        borderBottom: '1px solid #14141f',
+        borderBottom: '1px solid var(--border-color)',
         paddingBottom: '8px',
       }}>
         <span style={{ color: '#fff', fontWeight: 'bold', fontSize: '11px', letterSpacing: '1px' }}>
@@ -180,7 +180,7 @@ export default function RacePaceAnalysis() {
           style={{
             width: '100%',
             cursor: 'pointer',
-            background: `linear-gradient(to right, #e10600 ${threshold / 15 * 100}%, #14141f ${threshold / 15 * 100}%)`,
+            background: `linear-gradient(to right, #e10600 ${threshold / 15 * 100}%, var(--border-color) ${threshold / 15 * 100}%)`,
             appearance: 'none',
             height: '6px',
             borderRadius: '3px',
@@ -201,8 +201,8 @@ export default function RacePaceAnalysis() {
       }}>
         {/* Card 1 */}
         <div style={{
-          backgroundColor: '#09090d',
-          border: '1px solid #14141f',
+          backgroundColor: 'var(--bg-secondary)',
+          border: '1px solid var(--border-color)',
           borderRadius: '6px',
           padding: '10px',
         }}>
@@ -217,8 +217,8 @@ export default function RacePaceAnalysis() {
 
         {/* Card 2 */}
         <div style={{
-          backgroundColor: '#09090d',
-          border: '1px solid #14141f',
+          backgroundColor: 'var(--bg-secondary)',
+          border: '1px solid var(--border-color)',
           borderRadius: '6px',
           padding: '10px',
         }}>
@@ -228,8 +228,8 @@ export default function RacePaceAnalysis() {
 
         {/* Card 3 */}
         <div style={{
-          backgroundColor: '#09090d',
-          border: '1px solid #14141f',
+          backgroundColor: 'var(--bg-secondary)',
+          border: '1px solid var(--border-color)',
           borderRadius: '6px',
           padding: '10px',
         }}>
@@ -239,8 +239,8 @@ export default function RacePaceAnalysis() {
 
         {/* Card 4 */}
         <div style={{
-          backgroundColor: '#09090d',
-          border: '1px solid #14141f',
+          backgroundColor: 'var(--bg-secondary)',
+          border: '1px solid var(--border-color)',
           borderRadius: '6px',
           padding: '10px',
         }}>
@@ -267,10 +267,10 @@ export default function RacePaceAnalysis() {
             display: 'flex',
             flexDirection: 'column',
             gap: '8px',
-            backgroundColor: '#09090d',
+            backgroundColor: 'var(--bg-secondary)',
             padding: '12px',
             borderRadius: '6px',
-            border: '1px solid #14141f',
+            border: '1px solid var(--border-color)',
           }}>
             <div style={{ color: '#888899', fontSize: '10px', fontWeight: 'bold', letterSpacing: '0.5px' }}>
               CLEAN RACE PACE DEFICIT TO LEADER (SECONDS)
@@ -282,7 +282,7 @@ export default function RacePaceAnalysis() {
                   layout="vertical"
                   margin={{ top: 5, right: 15, left: -20, bottom: 5 }}
                 >
-                  <CartesianGrid stroke="#14141f" strokeDasharray="3 3" horizontal={false} />
+                  <CartesianGrid stroke="var(--border-color)" strokeDasharray="3 3" horizontal={false} />
                   <XAxis
                     type="number"
                     domain={[0, 'auto']}
@@ -316,10 +316,10 @@ export default function RacePaceAnalysis() {
             display: 'flex',
             flexDirection: 'column',
             gap: '8px',
-            backgroundColor: '#09090d',
+            backgroundColor: 'var(--bg-secondary)',
             padding: '12px',
             borderRadius: '6px',
-            border: '1px solid #14141f',
+            border: '1px solid var(--border-color)',
           }}>
             <div style={{ color: '#888899', fontSize: '10px', fontWeight: 'bold', letterSpacing: '0.5px' }}>
               PACE CONSISTENCY MATRIX (STD DEV vs AVG LAP TIME)
@@ -327,7 +327,7 @@ export default function RacePaceAnalysis() {
             <div style={{ height: '200px', width: '100%' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <ScatterChart margin={{ top: 10, right: 35, left: -15, bottom: 10 }}>
-                  <CartesianGrid stroke="#14141f" strokeDasharray="3 3" />
+                  <CartesianGrid stroke="var(--border-color)" strokeDasharray="3 3" />
                   <XAxis
                     type="number"
                     dataKey="paceDelta"

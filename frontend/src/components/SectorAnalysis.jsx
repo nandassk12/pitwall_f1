@@ -86,14 +86,14 @@ export default function SectorAnalysis({ drivers = [], activeDriver = '' }) {
 
   return (
     <div style={{
-      backgroundColor: '#09090d',
-      border: '1px solid #14141f',
+      backgroundColor: 'var(--bg-secondary)',
+      border: '1px solid var(--border-color)',
       borderRadius: '6px',
       padding: '15px',
       fontFamily: 'monospace',
     }}>
       {/* Header & Selection */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', borderBottom: '1px solid #14141f', paddingBottom: '8px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
         <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#fff', letterSpacing: '1px' }}>
           ◈ SECTOR PERFORMANCE ANALYSIS
         </span>
@@ -156,7 +156,7 @@ export default function SectorAnalysis({ drivers = [], activeDriver = '' }) {
             marginBottom: '12px',
           }}>
             {/* Session best thresholds */}
-            <div style={{ backgroundColor: '#0c0c12', border: '1px solid #14141f', borderRadius: '4px', padding: '8px 12px' }}>
+            <div style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '4px', padding: '8px 12px' }}>
               <div style={{ fontSize: '8px', color: '#555666', letterSpacing: '1px', marginBottom: '4px' }}>SESSION FASTEST SECTORS</div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
                 <span>S1: <span style={{ color: '#bf00ff', fontWeight: 'bold' }}>{formatTime(data.sessionBestS1)}s</span></span>
@@ -166,7 +166,7 @@ export default function SectorAnalysis({ drivers = [], activeDriver = '' }) {
             </div>
 
             {/* Personal best thresholds */}
-            <div style={{ backgroundColor: '#0c0c12', border: '1px solid #14141f', borderRadius: '4px', padding: '8px 12px' }}>
+            <div style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '4px', padding: '8px 12px' }}>
               <div style={{ fontSize: '8px', color: '#555666', letterSpacing: '1px', marginBottom: '4px' }}>{data.driver} PERSONAL BEST SECTORS</div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
                 <span>S1: <span style={{ color: '#00e676', fontWeight: 'bold' }}>{formatTime(data.personalBestS1)}s</span></span>
@@ -279,7 +279,7 @@ export default function SectorAnalysis({ drivers = [], activeDriver = '' }) {
           </table>
 
           {/* Pagination Controls */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px', paddingTop: '8px', borderTop: '1px solid #14141f' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px', paddingTop: '8px', borderTop: '1px solid var(--border-color)' }}>
             <span style={{ fontSize: '9px', color: '#555666' }}>
               SHOWING LAPS {startIndex + 1}–{Math.min(startIndex + itemsPerPage, laps.length)} OF {laps.length}
             </span>

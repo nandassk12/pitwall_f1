@@ -33,6 +33,7 @@ LIVE_STANDINGS_TOWER = []
 METEO_TRACK_DATA = {}
 CIRCUIT_BOUNDS = {}              # {minX, maxX, minY, maxY, width, height} — computed per session
 CIRCUIT_CORNER_COUNT = 0    # number of detected corners — set by compile_session_data
+TEAM_COLOR_MAP: dict = {}   # {team_name: hex_color} — populated at session load
 
 # ── OpenF1 integration (2023+ sessions only) ──────────────────────────────────
 OPENF1_SESSION_KEY = None        # Integer session_key resolved from OpenF1 /sessions
@@ -48,6 +49,8 @@ MEMORY_WARN_MB = 1500
 CURRENT_SESSION_LABEL = None     # e.g. "Monaco 2023 — Race"
 CURRENT_SESSION_YEAR = None
 CURRENT_SESSION_ROUND = None
+CURRENT_SESSION_CIRCUIT = None
+CURRENT_SESSION_TYPE = None
 
 
 # Map long FastF1 session names → short UI codes
@@ -87,11 +90,14 @@ def check_memory() -> float:
 def clear_session_cache():
     """Safely wipes all in-memory session caches and triggers GC."""
     global SESSION_OBJECT, CURRENT_SESSION_LABEL, CURRENT_SESSION_YEAR, CURRENT_SESSION_ROUND
+    global CURRENT_SESSION_CIRCUIT, CURRENT_SESSION_TYPE
     global OPENF1_SESSION_KEY
     SESSION_OBJECT = None
     CURRENT_SESSION_LABEL = None
     CURRENT_SESSION_YEAR = None
     CURRENT_SESSION_ROUND = None
+    CURRENT_SESSION_CIRCUIT = None
+    CURRENT_SESSION_TYPE = None
     OPENF1_SESSION_KEY = None
     DRIVERS_ENGINEERING_CACHE.clear()
     POLE_TELEMETRY_TRACK.clear()
@@ -102,6 +108,7 @@ def clear_session_cache():
     CIRCUIT_CORNER_COUNT = 0
     RACE_CONTROL_MESSAGES.clear()
     SECTOR_BESTS_CACHE.clear()
+    TEAM_COLOR_MAP.clear()
     openf1.clear_openf1_cache()
     simulator.clear_sim_state()
     gc.collect()
@@ -117,6 +124,19 @@ def compile_session_data(session):
     """
     global SESSION_OBJECT, CURRENT_SESSION_LABEL
     SESSION_OBJECT = session
+
+    # Extract official team colors from FastF1 session results
+    TEAM_COLOR_MAP.clear()
+    try:
+        for _, row in session.results.iterrows():
+            team = str(row.get('TeamName', ''))
+            color = str(row.get('TeamColor', ''))
+            if team and color and color.lower() != 'nan':
+                # FastF1 returns hex without '#'
+                TEAM_COLOR_MAP[team] = f'#{color}' if not color.startswith('#') else color
+        print(f"[Colors] Team colors loaded: {TEAM_COLOR_MAP}")
+    except Exception as e:
+        print(f"[Colors] Team color extraction failed: {e}")
 
     # 1. PARSE CRITICAL WEATHER INFORMATION
     try:
@@ -456,13 +476,41 @@ def compile_session_data(session):
 session_router = APIRouter()
 
 
+@session_router.get("/api/team-colors")
+def get_team_colors():
+    """
+    Returns team colors for the currently loaded session.
+    Colors come directly from FastF1 session.results — correct per season.
+    Falls back to static map if session not loaded.
+    """
+    if TEAM_COLOR_MAP:
+        return TEAM_COLOR_MAP
+
+    # Static fallback for when no session is loaded
+    return {
+        "Red Bull Racing":   "#3671C6",
+        "Ferrari":           "#E8002D",
+        "Mercedes":          "#27F4D2",
+        "McLaren":           "#FF8000",
+        "Aston Martin":      "#229971",
+        "Alpine":            "#FF87BC",
+        "Williams":          "#64C4FF",
+        "AlphaTauri":        "#6692FF",
+        "Alfa Romeo":        "#C92D4B",
+        "Haas F1 Team":      "#B6BABD",
+        "RB":                "#6692FF",
+        "Kick Sauber":       "#52E252",
+        "Sauber":            "#52E252",
+    }
+
+
 @session_router.get("/api/sessions/years")
 def get_supported_years():
     """Returns the list of supported F1 seasons. No FastF1 call — instant.
     FastF1 coverage: 2018–present.
     OpenF1 enrichment (race control, etc.): 2023–present.
     """
-    return list(range(2018, 2026))  # 2018 – 2025 inclusive
+    return list(range(2018, 2027))  # 2018 – 2026 inclusive
 
 
 @session_router.get("/api/sessions/calendar")
@@ -479,30 +527,74 @@ def get_calendar(year: int):
         races = []
         for _, event in schedule.iterrows():
             event_format = str(event.get('EventFormat', '')).lower()
-            if event_format == 'testing':
+            if 'testing' in event_format or event_format == 'nan' or not event_format:
                 continue
 
-            event_name = str(event['EventName'])
+            event_name = event.get('EventName')
+            if pd.isna(event_name) or not event_name:
+                continue
+            event_name = str(event_name).strip()
+
+            round_val = event.get('RoundNumber')
+            if pd.isna(round_val) or round_val is None:
+                continue
+            try:
+                round_num = int(round_val)
+            except (ValueError, TypeError):
+                continue
+
+            if round_num == 0:
+                continue
+
             short_name = event_name.replace('Grand Prix', '').replace('  ', ' ').strip()
 
-            event_date = event['EventDate']
-            date_str = (
-                str(event_date.date())
-                if hasattr(event_date, 'date') else str(event_date)
-            )
+            event_date = event.get('EventDate')
+            if pd.isna(event_date) or event_date is None:
+                date_str = "TBD"
+            else:
+                date_str = (
+                    str(event_date.date())
+                    if hasattr(event_date, 'date') else str(event_date)
+                )
+
+            sessions = []
+            for i in range(1, 6):
+                slot_name = event.get(f'Session{i}')
+                slot_date = event.get(f'Session{i}Date')
+                if pd.notna(slot_name) and slot_name and pd.notna(slot_date) and slot_date is not None:
+                    try:
+                        formatted_time = slot_date.strftime('%B %d, %Y %I:%M %p')
+                    except Exception:
+                        formatted_time = str(slot_date)
+                    sessions.append({
+                        "name": str(slot_name),
+                        "time": formatted_time
+                    })
+
+            session1_date = event.get('Session1Date')
+            session5_date = event.get('Session5Date')
+            try:
+                start_str = session1_date.strftime('%B %d, %Y') if pd.notna(session1_date) else ""
+                end_str = session5_date.strftime('%B %d, %Y') if pd.notna(session5_date) else ""
+                date_range = f"{start_str} ~ {end_str}" if start_str and end_str else date_str
+            except Exception:
+                date_range = date_str
 
             races.append({
-                "round":     int(event['RoundNumber']),
+                "round":     round_num,
                 "name":      event_name,       # full name — used as FastF1 identifier
                 "shortName": short_name,       # display label in dropdown
-                "country":   str(event['Country']),
+                "country":   str(event.get('Country', 'Unknown')),
                 "date":      date_str,
+                "dateRange": date_range,
+                "sessions":  sessions,
             })
 
         CALENDAR_CACHE[year] = races
         return races
 
     except Exception as e:
+        print(f"[Session] Calendar fetch failed for year {year}: {e}")
         raise HTTPException(status_code=500, detail=f"Calendar fetch failed: {e}")
 
 
@@ -512,6 +604,7 @@ def get_session_types(year: int, circuit: str):
     Returns the available session types for a given event.
     Looks up from the cached schedule if available, otherwise fetches from FastF1.
     """
+    fallback_types = ["FP1", "FP2", "FP3", "Q", "R"]
     try:
         # Use cached schedule when available — avoids an extra network call
         if year in CALENDAR_CACHE:
@@ -524,27 +617,31 @@ def get_session_types(year: int, circuit: str):
                 if not event_row.empty:
                     event = event_row.iloc[0]
                     available = _parse_session_types(event)
-                    return {"available": available}
+                    return {"available": available if available else fallback_types}
 
         # Fallback: direct event fetch
         event = fastf1.get_event(year, circuit)
         available = _parse_session_types(event)
-        return {"available": available}
+        return {"available": available if available else fallback_types}
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Session type fetch failed: {e}")
+        print(f"[Session] Session type fetch failed for {year} - {circuit}: {e}")
+        return {"available": fallback_types}
 
 
 def _parse_session_types(event) -> list:
     """Extracts ordered session short codes from a FastF1 Event Series row."""
     available = []
-    for slot in ['Session1', 'Session2', 'Session3', 'Session4', 'Session5']:
-        raw = event.get(slot, '') if hasattr(event, 'get') else event[slot] if slot in event.index else ''
-        val = str(raw).strip()
-        if val and val.lower() != 'nan' and val != 'None':
-            short = SESSION_LONG_TO_SHORT.get(val, val)
-            if short not in available:
-                available.append(short)
+    try:
+        for slot in ['Session1', 'Session2', 'Session3', 'Session4', 'Session5']:
+            raw = event.get(slot, '') if hasattr(event, 'get') else event[slot] if slot in event.index else ''
+            val = str(raw).strip()
+            if val and val.lower() != 'nan' and val != 'None' and val.lower() != 'nat':
+                short = SESSION_LONG_TO_SHORT.get(val, val)
+                if short not in available:
+                    available.append(short)
+    except Exception as e:
+        print(f"[Session] _parse_session_types failed: {e}")
     return available if available else ["FP1", "FP2", "FP3", "Q", "R"]
 
 
@@ -580,8 +677,11 @@ def load_session(req: SessionLoadRequest):
         session.load(laps=True, telemetry=True, weather=True)
 
         global CURRENT_SESSION_LABEL, CURRENT_SESSION_YEAR, CURRENT_SESSION_ROUND
+        global CURRENT_SESSION_CIRCUIT, CURRENT_SESSION_TYPE
         CURRENT_SESSION_LABEL = label
         CURRENT_SESSION_YEAR = req.year
+        CURRENT_SESSION_CIRCUIT = req.circuit
+        CURRENT_SESSION_TYPE = req.session_type
         CURRENT_SESSION_ROUND = int(session.event['RoundNumber']) if 'RoundNumber' in session.event.index else 1
 
         # Recompute all engineering caches

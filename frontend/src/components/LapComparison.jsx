@@ -150,14 +150,14 @@ export default function LapComparison({ drivers = [], activeDriver = '' }) {
 
   return (
     <div style={{
-      backgroundColor: '#09090d',
-      border: '1px solid #14141f',
+      backgroundColor: 'var(--bg-secondary)',
+      border: '1px solid var(--border-color)',
       borderRadius: '6px',
       padding: '15px',
       fontFamily: 'monospace',
     }}>
       {/* Header and Driver Pills */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', borderBottom: '1px solid #14141f', paddingBottom: '8px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
         <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#fff', letterSpacing: '1px' }}>
           ⇌ MULTI-DRIVER LAP & TELEMETRY COMPARISON
         </span>
@@ -219,7 +219,7 @@ export default function LapComparison({ drivers = [], activeDriver = '' }) {
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px', marginBottom: '15px' }}>
         
         {/* Left Side: Mini Sectors Table */}
-        <div style={{ backgroundColor: '#0c0c12', border: '1px solid #14141f', borderRadius: '4px', padding: '10px' }}>
+        <div style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '4px', padding: '10px' }}>
           <div style={{ fontSize: '9px', color: '#888', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '8px', borderBottom: '1px solid #1c1c28', paddingBottom: '4px' }}>
             MINI SECTORS (PERSONAL BESTS)
           </div>
@@ -267,7 +267,7 @@ export default function LapComparison({ drivers = [], activeDriver = '' }) {
         </div>
 
         {/* Right Side: Lap Delta Chart */}
-        <div style={{ backgroundColor: '#0c0c12', border: '1px solid #14141f', borderRadius: '4px', padding: '10px' }}>
+        <div style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '4px', padding: '10px' }}>
           <div style={{ fontSize: '9px', color: '#888', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '8px', borderBottom: '1px solid #1c1c28', paddingBottom: '4px' }}>
             LAP DELTA VS DRIVER A (REFERENCE: {selectedDrivers[0] || '—'})
           </div>
@@ -279,7 +279,7 @@ export default function LapComparison({ drivers = [], activeDriver = '' }) {
                   <XAxis dataKey="lap" fontSize={8} stroke="#444552" />
                   <YAxis fontSize={8} stroke="#444552" label={{ value: 'Delta (s)', angle: -90, position: 'insideLeft', style: { fill: '#444552', fontSize: 8 } }} />
                   <Tooltip
-                    contentStyle={{ backgroundColor: '#09090d', borderColor: '#1e1e2e', fontSize: '10px', fontFamily: 'monospace' }}
+                    contentStyle={{ backgroundColor: 'var(--bg-secondary)', borderColor: '#1e1e2e', fontSize: '10px', fontFamily: 'monospace' }}
                     labelFormatter={(label) => `Lap ${label}`}
                     formatter={(v, name) => [`${v} s`, name.replace('delta_', '')]}
                   />
@@ -310,17 +310,17 @@ export default function LapComparison({ drivers = [], activeDriver = '' }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         
         {/* Speed Chart */}
-        <div style={{ backgroundColor: '#040406', border: '1px solid #14141f', borderRadius: '4px', padding: '8px 10px' }}>
+        <div style={{ backgroundColor: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: '4px', padding: '8px 10px' }}>
           <div style={{ fontSize: '8px', color: '#555666', letterSpacing: '1px', marginBottom: '6px' }}>VELOCITY OVERLAY (KMH)</div>
           <div style={{ width: '100%', height: '110px' }}>
             {mergedTel.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={mergedTel} margin={{ left: -25, right: 5, top: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="2 2" stroke="#14141f" />
+                  <CartesianGrid strokeDasharray="2 2" stroke="var(--border-color)" />
                   <XAxis dataKey="time" hide />
                   <YAxis stroke="#444552" domain={[60, 340]} fontSize={8} />
                   <Tooltip
-                    contentStyle={{ backgroundColor: '#09090d', borderColor: '#1e1e2e', fontSize: '9px', fontFamily: 'monospace' }}
+                    contentStyle={{ backgroundColor: 'var(--bg-secondary)', borderColor: '#1e1e2e', fontSize: '9px', fontFamily: 'monospace' }}
                     formatter={(v, name) => [`${v} KMH`, name.replace('speed_', '')]}
                   />
                   {selectedDrivers.map((drv, idx) => (
@@ -345,17 +345,17 @@ export default function LapComparison({ drivers = [], activeDriver = '' }) {
         </div>
 
         {/* Throttle Chart */}
-        <div style={{ backgroundColor: '#040406', border: '1px solid #14141f', borderRadius: '4px', padding: '8px 10px' }}>
+        <div style={{ backgroundColor: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: '4px', padding: '8px 10px' }}>
           <div style={{ fontSize: '8px', color: '#555666', letterSpacing: '1px', marginBottom: '6px' }}>THROTTLE PEDAL (%)</div>
           <div style={{ width: '100%', height: '80px' }}>
             {mergedTel.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={mergedTel} margin={{ left: -25, right: 5, top: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="2 2" stroke="#14141f" />
+                  <CartesianGrid strokeDasharray="2 2" stroke="var(--border-color)" />
                   <XAxis dataKey="time" hide />
                   <YAxis stroke="#444552" domain={[0, 100]} fontSize={8} />
                   <Tooltip
-                    contentStyle={{ backgroundColor: '#09090d', borderColor: '#1e1e2e', fontSize: '9px', fontFamily: 'monospace' }}
+                    contentStyle={{ backgroundColor: 'var(--bg-secondary)', borderColor: '#1e1e2e', fontSize: '9px', fontFamily: 'monospace' }}
                     formatter={(v, name) => [`${v}%`, name.replace('throttle_', '')]}
                   />
                   {selectedDrivers.map((drv, idx) => (
@@ -380,17 +380,17 @@ export default function LapComparison({ drivers = [], activeDriver = '' }) {
         </div>
 
         {/* Brake Chart */}
-        <div style={{ backgroundColor: '#040406', border: '1px solid #14141f', borderRadius: '4px', padding: '8px 10px' }}>
+        <div style={{ backgroundColor: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: '4px', padding: '8px 10px' }}>
           <div style={{ fontSize: '8px', color: '#555666', letterSpacing: '1px', marginBottom: '6px' }}>BRAKE TRIGGER (ON/OFF)</div>
           <div style={{ width: '100%', height: '70px' }}>
             {mergedTel.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={mergedTel} margin={{ left: -25, right: 5, top: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="2 2" stroke="#14141f" />
+                  <CartesianGrid strokeDasharray="2 2" stroke="var(--border-color)" />
                   <XAxis dataKey="time" hide />
                   <YAxis stroke="#444552" domain={[0, 1]} fontSize={8} ticks={[0, 1]} />
                   <Tooltip
-                    contentStyle={{ backgroundColor: '#09090d', borderColor: '#1e1e2e', fontSize: '9px', fontFamily: 'monospace' }}
+                    contentStyle={{ backgroundColor: 'var(--bg-secondary)', borderColor: '#1e1e2e', fontSize: '9px', fontFamily: 'monospace' }}
                     formatter={(v, name) => [v === 1 ? 'BRAKING' : 'OFF', name.replace('brake_', '')]}
                   />
                   {selectedDrivers.map((drv, idx) => (

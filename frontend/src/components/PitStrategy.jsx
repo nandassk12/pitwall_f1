@@ -49,14 +49,14 @@ export default function PitStrategy() {
 
   return (
     <div style={{
-      backgroundColor: '#09090d',
-      border: '1px solid #14141f',
+      backgroundColor: 'var(--bg-secondary)',
+      border: '1px solid var(--border-color)',
       borderRadius: '6px',
       padding: '15px',
       fontFamily: 'monospace',
     }}>
       {/* Panel Title & Legend */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', borderBottom: '1px solid #14141f', paddingBottom: '8px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
         <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#fff', letterSpacing: '1px' }}>
           ⏱ PIT STOP & TYRE STINT STRATEGY
         </span>
@@ -182,7 +182,7 @@ export default function PitStrategy() {
       </div>
 
       {/* Axis / Grid Labels */}
-      <div style={{ display: 'flex', marginLeft: '102px', marginTop: '6px', borderTop: '1px solid #14141f', paddingTop: '4px', justifyContent: 'space-between', fontSize: '9px', color: '#444552' }}>
+      <div style={{ display: 'flex', marginLeft: '102px', marginTop: '6px', borderTop: '1px solid var(--border-color)', paddingTop: '4px', justifyContent: 'space-between', fontSize: '9px', color: '#444552' }}>
         <span>LAP 1</span>
         <span>LAP {Math.round(totalLaps * 0.25)}</span>
         <span>LAP {Math.round(totalLaps * 0.5)}</span>
@@ -193,7 +193,7 @@ export default function PitStrategy() {
       {/* Hover Info HUD */}
       <div style={{
         marginTop: '12px',
-        backgroundColor: '#0c0c12',
+        backgroundColor: 'var(--bg-secondary)',
         border: '1px solid #1b1b2a',
         borderRadius: '4px',
         padding: '8px 12px',

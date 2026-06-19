@@ -12,7 +12,19 @@ export default function SessionSelector({ onSessionLoaded, currentSession }) {
   const [error, setError] = useState(null);
 
   const progressTimerRef = useRef(null);
-  const years = [2018, 2019, 2020, 2021, 2022, 2023, 2024];
+  const [years, setYears] = useState([2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026]);
+
+  // Load supported years list from backend
+  useEffect(() => {
+    fetch('/api/sessions/years')
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          setYears(data);
+        }
+      })
+      .catch(err => console.warn('Failed to load supported years, using fallback list', err));
+  }, []);
 
   const SESSION_LABELS = {
     FP1: 'FP1', FP2: 'FP2', FP3: 'FP3',
@@ -27,10 +39,12 @@ export default function SessionSelector({ onSessionLoaded, currentSession }) {
     setError(null);
 
     fetch(`/api/sessions/calendar?year=${selectedYear}`)
-      .then(r => r.json())
+      .then(r => r.ok ? r.json() : [])
       .then(data => {
-        setCalendar(data);
-        if (data.length > 0) setSelectedCircuit(data[0].name);
+        const list = Array.isArray(data) ? data : [];
+        setCalendar(list);
+        if (list.length > 0) setSelectedCircuit(list[0].name);
+        else setError('No races found for this season.');
       })
       .catch(() => setError('Failed to load calendar. Is the backend running?'));
   }, [selectedYear]);
@@ -42,9 +56,9 @@ export default function SessionSelector({ onSessionLoaded, currentSession }) {
     setError(null);
 
     fetch(`/api/sessions/types?year=${selectedYear}&circuit=${encodeURIComponent(selectedCircuit)}`)
-      .then(r => r.json())
+      .then(r => r.ok ? r.json() : { available: [] })
       .then(data => {
-        const types = data.available || [];
+        const types = data?.available || ['FP1', 'FP2', 'FP3', 'Q', 'R'];
         setSessionTypes(types);
         setSelectedType(types.includes('R') ? 'R' : types[0] || 'R');
       })
@@ -115,10 +129,10 @@ export default function SessionSelector({ onSessionLoaded, currentSession }) {
   return (
     <div style={{
       position: 'fixed', inset: 0,
-      backgroundColor: '#040406',
+      backgroundColor: 'var(--bg-primary)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       fontFamily: 'monospace', zIndex: 1000,
-      backgroundImage: 'radial-gradient(ellipse at 50% 0%, #1a0404 0%, #040406 60%)',
+      backgroundImage: 'radial-gradient(ellipse at 50% 0%, #1a0404 0%, var(--bg-primary) 60%)',
     }}>
 
       {/* Red accent line at top */}
@@ -134,7 +148,7 @@ export default function SessionSelector({ onSessionLoaded, currentSession }) {
 
       {/* Main card */}
       <div style={{
-        backgroundColor: '#09090d',
+        backgroundColor: 'var(--bg-secondary)',
         border: '1px solid #1e1e2e',
         borderRadius: '8px',
         padding: '36px 40px',
@@ -179,7 +193,7 @@ export default function SessionSelector({ onSessionLoaded, currentSession }) {
                   fontSize: '11px', fontWeight: 'bold', fontFamily: 'monospace',
                   border: '1px solid',
                   borderColor: selectedYear === y ? '#e10600' : '#1e1e2e',
-                  backgroundColor: selectedYear === y ? '#e1060018' : '#0d0d14',
+                  backgroundColor: selectedYear === y ? '#e1060018' : 'var(--bg-tertiary)',
                   color: selectedYear === y ? '#e10600' : '#666677',
                   borderRadius: '4px', cursor: loading ? 'not-allowed' : 'pointer',
                   transition: 'all 0.15s ease',
@@ -201,7 +215,7 @@ export default function SessionSelector({ onSessionLoaded, currentSession }) {
             onChange={e => setSelectedCircuit(e.target.value)}
             style={{
               width: '100%', padding: '10px 12px',
-              backgroundColor: '#0d0d14', color: '#f0f0f5',
+              backgroundColor: 'var(--bg-tertiary)', color: '#f0f0f5',
               border: '1px solid #1e1e2e', borderRadius: '4px',
               fontFamily: 'monospace', fontSize: '12px', fontWeight: 'bold',
               cursor: loading ? 'not-allowed' : 'pointer',
@@ -235,7 +249,7 @@ export default function SessionSelector({ onSessionLoaded, currentSession }) {
                   fontSize: '11px', fontWeight: 'bold', fontFamily: 'monospace',
                   border: '1px solid',
                   borderColor: selectedType === type ? '#e10600' : '#1e1e2e',
-                  backgroundColor: selectedType === type ? '#e10600' : '#0d0d14',
+                  backgroundColor: selectedType === type ? '#e10600' : 'var(--bg-tertiary)',
                   color: selectedType === type ? '#ffffff' : '#666677',
                   borderRadius: '4px', cursor: loading ? 'not-allowed' : 'pointer',
                   transition: 'all 0.15s ease',
@@ -275,7 +289,7 @@ export default function SessionSelector({ onSessionLoaded, currentSession }) {
                 <span style={{ fontSize: '10px', color: '#555666' }}>{Math.round(progress)}%</span>
               </div>
               {/* Progress bar */}
-              <div style={{ height: '4px', backgroundColor: '#0d0d14', borderRadius: '2px', overflow: 'hidden', border: '1px solid #1e1e2e' }}>
+              <div style={{ height: '4px', backgroundColor: 'var(--bg-tertiary)', borderRadius: '2px', overflow: 'hidden', border: '1px solid #1e1e2e' }}>
                 <div style={{
                   height: '100%', width: `${progress}%`,
                   backgroundColor: '#e10600',
@@ -286,7 +300,7 @@ export default function SessionSelector({ onSessionLoaded, currentSession }) {
               </div>
             </div>
             <div style={{
-              backgroundColor: '#0d0d14', border: '1px solid #1e1e2e',
+              backgroundColor: 'var(--bg-tertiary)', border: '1px solid #1e1e2e',
               borderRadius: '4px', padding: '10px 14px',
               fontSize: '10px', color: '#555666', lineHeight: 1.6,
             }}>

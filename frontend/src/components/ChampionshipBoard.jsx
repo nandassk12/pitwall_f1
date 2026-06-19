@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getTeamColor } from './teamColours';
 
-export default function ChampionshipBoard({ sessionYear, sessionRound }) {
+export default function ChampionshipBoard({ sessionYear, sessionRound, tab }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -45,7 +45,7 @@ export default function ChampionshipBoard({ sessionYear, sessionRound }) {
   if (error || !data) {
     return (
       <div style={{
-        backgroundColor: '#0c0c12',
+        backgroundColor: 'var(--bg-secondary)',
         border: '1px solid #2b1114',
         borderRadius: '6px',
         padding: '20px',
@@ -68,14 +68,14 @@ export default function ChampionshipBoard({ sessionYear, sessionRound }) {
 
   return (
     <div style={{
-      backgroundColor: '#09090d',
-      border: '1px solid #14141f',
+      backgroundColor: 'var(--bg-secondary)',
+      border: '1px solid var(--border-color)',
       borderRadius: '6px',
       padding: '15px',
       fontFamily: 'monospace',
     }}>
       {/* Title Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', borderBottom: '1px solid #14141f', paddingBottom: '8px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
         <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#fff', letterSpacing: '1px' }}>
           🏆 CHAMPIONSHIP STANDINGS // SEASON {year} — ROUND {round}
         </span>
@@ -85,10 +85,15 @@ export default function ChampionshipBoard({ sessionYear, sessionRound }) {
       </div>
 
       {/* Side-by-Side Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px' }}>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: tab === 'drivers' ? '1fr' : tab === 'constructors' ? '1fr' : '1.2fr 1fr',
+        gap: '20px'
+      }}>
         
         {/* Left Column: WDC Standings */}
-        <div>
+        {tab !== 'constructors' && (
+          <div>
           <div style={{ fontSize: '9px', color: '#888', fontWeight: 'bold', letterSpacing: '1.5px', marginBottom: '8px', borderBottom: '1px solid #222', paddingBottom: '4px' }}>
             WORLD DRIVERS' CHAMPIONSHIP (WDC)
           </div>
@@ -155,10 +160,12 @@ export default function ChampionshipBoard({ sessionYear, sessionRound }) {
             </table>
           </div>
         </div>
+      )}
 
         {/* Right Column: WCC Standings */}
-        <div>
-          <div style={{ fontSize: '9px', color: '#888', fontWeight: 'bold', letterSpacing: '1.5px', marginBottom: '8px', borderBottom: '1px solid #222', paddingBottom: '4px' }}>
+        {tab !== 'drivers' && (
+          <div>
+            <div style={{ fontSize: '9px', color: '#888', fontWeight: 'bold', letterSpacing: '1.5px', marginBottom: '8px', borderBottom: '1px solid #222', paddingBottom: '4px' }}>
             WORLD CONSTRUCTORS' CHAMPIONSHIP (WCC)
           </div>
           <div style={{ maxHeight: '350px', overflowY: 'auto' }}>
@@ -220,6 +227,7 @@ export default function ChampionshipBoard({ sessionYear, sessionRound }) {
             </table>
           </div>
         </div>
+      )}
 
       </div>
     </div>

@@ -152,7 +152,7 @@ export default function SimulationControls() {
       </div>
 
       {/* ── Race progress bar ────────────────────────────────────────────── */}
-      <div style={{ height: '5px', backgroundColor: '#0d0d14', borderRadius: '3px', overflow: 'hidden', border: '1px solid #1e1e2e', marginBottom: '10px' }}>
+      <div style={{ height: '5px', backgroundColor: 'var(--bg-tertiary)', borderRadius: '3px', overflow: 'hidden', border: '1px solid #1e1e2e', marginBottom: '10px' }}>
         <div style={{
           height: '100%',
           width: `${progress}%`,
@@ -185,7 +185,7 @@ export default function SimulationControls() {
               style={{
                 padding: '5px 10px',
                 fontSize: '10px', fontFamily: 'monospace', fontWeight: 'bold',
-                backgroundColor: speed === s ? '#e10600' : '#0d0d14',
+                backgroundColor: speed === s ? '#e10600' : 'var(--bg-tertiary)',
                 color:           speed === s ? '#fff'    : '#666677',
                 border:          `1px solid ${speed === s ? '#e10600' : '#1e1e2e'}`,
                 borderRadius:    '3px', cursor: 'pointer',
@@ -316,8 +316,8 @@ export default function SimulationControls() {
 
 // ── Style constants ───────────────────────────────────────────────────────────
 const panelStyle = {
-  backgroundColor: '#09090d',
-  border:          '1px solid #14141f',
+  backgroundColor: 'var(--bg-secondary)',
+  border:          '1px solid var(--border-color)',
   borderRadius:    '6px',
   padding:         '14px 16px',
   marginTop:       '15px',
@@ -356,7 +356,7 @@ const bigBtnStyle = (color) => ({
 
 const smallBtnStyle = {
   padding:         '5px 12px',
-  backgroundColor: '#0d0d14',
+  backgroundColor: 'var(--bg-tertiary)',
   color:           '#555666',
   border:          '1px solid #1e1e2e',
   borderRadius:    '4px',
@@ -373,11 +373,11 @@ const tableRowStyle = (isPit, isHeader, isLeader) => ({
   alignItems:      'center',
   padding:         '4px 6px',
   borderRadius:    '3px',
-  backgroundColor: isHeader  ? '#0d0d14'
+  backgroundColor: isHeader  ? 'var(--bg-tertiary)'
                  : isPit     ? '#1a150a'
                  : isLeader  ? '#0a1a10'
                  : 'transparent',
-  borderBottom:    isHeader ? '1px solid #1e1e2e' : '1px solid #0d0d14',
+  borderBottom:    isHeader ? '1px solid #1e1e2e' : '1px solid var(--bg-tertiary)',
   marginBottom:    '1px',
 });
 

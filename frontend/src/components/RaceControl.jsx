@@ -109,7 +109,7 @@ function RaceControlRow({ msg }) {
             marginLeft:      '8px',
             color:           '#888899',
             fontSize:        '10px',
-            backgroundColor: '#14141f',
+            backgroundColor: 'var(--border-color)',
             padding:         '1px 5px',
             borderRadius:    '3px',
           }}>
@@ -157,9 +157,9 @@ export default function RaceControl({ raceControl }) {
         textAlign:     'center',
         fontFamily:    'monospace',
         color:         '#555666',
-        backgroundColor: '#09090d',
+        backgroundColor: 'var(--bg-secondary)',
         borderRadius:  '6px',
-        border:        '1px solid #14141f',
+        border:        '1px solid var(--border-color)',
       }}>
         <div style={{ fontSize: '28px', marginBottom: '12px' }}>📡</div>
         <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#888899', marginBottom: '6px' }}>
@@ -174,8 +174,8 @@ export default function RaceControl({ raceControl }) {
 
   return (
     <div style={{
-      backgroundColor: '#09090d',
-      border:          '1px solid #14141f',
+      backgroundColor: 'var(--bg-secondary)',
+      border:          '1px solid var(--border-color)',
       borderRadius:    '6px',
       fontFamily:      'monospace',
       overflow:        'hidden',
@@ -187,8 +187,8 @@ export default function RaceControl({ raceControl }) {
         justifyContent:  'space-between',
         alignItems:      'center',
         padding:         '10px 14px',
-        borderBottom:    '1px solid #14141f',
-        backgroundColor: '#0d0d14',
+        borderBottom:    '1px solid var(--border-color)',
+        backgroundColor: 'var(--bg-tertiary)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span style={{ color: '#e10600', fontWeight: 'bold', fontSize: '11px', letterSpacing: '1.5px' }}>
@@ -197,7 +197,7 @@ export default function RaceControl({ raceControl }) {
           <span style={{
             fontSize:        '10px',
             color:           '#888899',
-            backgroundColor: '#14141f',
+            backgroundColor: 'var(--border-color)',
             padding:         '2px 8px',
             borderRadius:    '10px',
           }}>
@@ -219,7 +219,7 @@ export default function RaceControl({ raceControl }) {
                 letterSpacing:   '0.8px',
                 backgroundColor: filter === f ? '#e10600' : 'transparent',
                 color:           filter === f ? '#fff' : '#888899',
-                border:          filter === f ? '1px solid #e10600' : '1px solid #14141f',
+                border:          filter === f ? '1px solid #e10600' : '1px solid var(--border-color)',
                 borderRadius:    '3px',
                 cursor:          'pointer',
                 transition:      'all 0.12s ease',
@@ -239,7 +239,7 @@ export default function RaceControl({ raceControl }) {
               fontFamily:      'monospace',
               backgroundColor: 'transparent',
               color:           '#555666',
-              border:          '1px solid #14141f',
+              border:          '1px solid var(--border-color)',
               borderRadius:    '3px',
               cursor:          'pointer',
               transition:      'color 0.12s ease',
@@ -256,7 +256,7 @@ export default function RaceControl({ raceControl }) {
         gridTemplateColumns: '48px 60px 140px 1fr',
         gap:                 '10px',
         padding:             '6px 12px',
-        borderBottom:        '1px solid #14141f',
+        borderBottom:        '1px solid var(--border-color)',
         fontSize:            '9px',
         color:               '#555666',
         letterSpacing:       '1px',
@@ -274,7 +274,7 @@ export default function RaceControl({ raceControl }) {
         overflowY:   'auto',
         padding:     '8px 10px',
         scrollbarWidth: 'thin',
-        scrollbarColor: '#14141f transparent',
+        scrollbarColor: 'var(--border-color) transparent',
       }}>
         {visible.length === 0 ? (
           <div style={{ textAlign: 'center', color: '#555666', padding: '30px', fontSize: '11px' }}>
@@ -292,8 +292,8 @@ export default function RaceControl({ raceControl }) {
         display:         'flex',
         gap:             '20px',
         padding:         '8px 14px',
-        borderTop:       '1px solid #14141f',
-        backgroundColor: '#0d0d14',
+        borderTop:       '1px solid var(--border-color)',
+        backgroundColor: 'var(--bg-tertiary)',
         fontSize:        '9px',
         color:           '#555666',
         letterSpacing:   '0.8px',

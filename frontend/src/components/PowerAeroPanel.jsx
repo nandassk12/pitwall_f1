@@ -11,7 +11,7 @@ const BarTooltip = ({ active, payload }) => {
     const data = payload[0].payload;
     return (
       <div style={{
-        backgroundColor: '#0d0d14',
+        backgroundColor: 'var(--bg-tertiary)',
         border: '1px solid #1c1c28',
         padding: '10px',
         borderRadius: '6px',
@@ -37,7 +37,7 @@ const LineCustomTooltip = ({ active, payload, label }) => {
     const sortedPayload = [...payload].sort((a, b) => b.value - a.value);
     return (
       <div style={{
-        backgroundColor: '#0d0d14',
+        backgroundColor: 'var(--bg-tertiary)',
         border: '1px solid #1c1c28',
         padding: '10px',
         borderRadius: '6px',
@@ -76,7 +76,7 @@ const AeroTooltip = ({ active, payload }) => {
     const color = getTeamColor(data.team);
     return (
       <div style={{
-        backgroundColor: '#0d0d14',
+        backgroundColor: 'var(--bg-tertiary)',
         border: '1px solid #1c1c28',
         padding: '10px',
         borderRadius: '6px',
@@ -103,7 +103,7 @@ const AeroDot = (props) => {
   const color = getTeamColor(payload.team);
   return (
     <g>
-      <circle cx={cx} cy={cy} r={5} fill={color} stroke="#09090d" strokeWidth={1.5} />
+      <circle cx={cx} cy={cy} r={5} fill={color} stroke="var(--bg-secondary)" strokeWidth={1.5} />
       <text
         x={cx + 8}
         y={cy + 3}
@@ -189,8 +189,8 @@ export default function PowerAeroPanel() {
         color: '#888899',
         fontSize: '12px',
         fontFamily: 'monospace',
-        backgroundColor: '#0d0d14',
-        border: '1px solid #14141f',
+        backgroundColor: 'var(--bg-tertiary)',
+        border: '1px solid var(--border-color)',
         borderRadius: '6px',
       }}>
         🔋 PRE-CALCULATING POWER AND AERODYNAMICS VECTORS...
@@ -203,10 +203,10 @@ export default function PowerAeroPanel() {
       display: 'flex',
       flexDirection: 'column',
       gap: '16px',
-      backgroundColor: '#0d0d14',
+      backgroundColor: 'var(--bg-tertiary)',
       padding: '16px',
       borderRadius: '6px',
-      border: '1px solid #14141f',
+      border: '1px solid var(--border-color)',
       fontFamily: 'monospace',
     }}>
       {/* SECTION 1: PEAK HORSEPOWER BAR CHART */}
@@ -214,10 +214,10 @@ export default function PowerAeroPanel() {
         display: 'flex',
         flexDirection: 'column',
         gap: '6px',
-        backgroundColor: '#09090d',
+        backgroundColor: 'var(--bg-secondary)',
         padding: '12px',
         borderRadius: '6px',
-        border: '1px solid #14141f',
+        border: '1px solid var(--border-color)',
       }}>
         <div>
           <span style={{ color: '#fff', fontSize: '10px', fontWeight: 'bold', letterSpacing: '0.5px' }}>
@@ -234,7 +234,7 @@ export default function PowerAeroPanel() {
               layout="vertical"
               margin={{ top: 5, right: 15, left: -20, bottom: 5 }}
             >
-              <CartesianGrid stroke="#14141f" strokeDasharray="3 3" horizontal={false} />
+              <CartesianGrid stroke="var(--border-color)" strokeDasharray="3 3" horizontal={false} />
               <XAxis type="number" fontSize={9} stroke="#444552" tickLine={false} />
               <YAxis
                 dataKey="driver"
@@ -262,10 +262,10 @@ export default function PowerAeroPanel() {
         display: 'flex',
         flexDirection: 'column',
         gap: '6px',
-        backgroundColor: '#09090d',
+        backgroundColor: 'var(--bg-secondary)',
         padding: '12px',
         borderRadius: '6px',
-        border: '1px solid #14141f',
+        border: '1px solid var(--border-color)',
       }}>
         <div style={{ color: '#fff', fontSize: '10px', fontWeight: 'bold', letterSpacing: '0.5px' }}>
           HP vs SPEED CURVE — ALL DRIVERS
@@ -276,7 +276,7 @@ export default function PowerAeroPanel() {
               data={lineChartData}
               margin={{ top: 10, right: 15, left: -20, bottom: 10 }}
             >
-              <CartesianGrid stroke="#14141f" strokeDasharray="3 3" />
+              <CartesianGrid stroke="var(--border-color)" strokeDasharray="3 3" />
               <XAxis
                 dataKey="speed"
                 type="number"
@@ -319,10 +319,10 @@ export default function PowerAeroPanel() {
         display: 'flex',
         flexDirection: 'column',
         gap: '6px',
-        backgroundColor: '#09090d',
+        backgroundColor: 'var(--bg-secondary)',
         padding: '12px',
         borderRadius: '6px',
-        border: '1px solid #14141f',
+        border: '1px solid var(--border-color)',
       }}>
         <div>
           <span style={{ color: '#fff', fontSize: '10px', fontWeight: 'bold', letterSpacing: '0.5px' }}>
@@ -335,7 +335,7 @@ export default function PowerAeroPanel() {
         <div style={{ height: '220px', width: '100%', marginTop: '6px' }}>
           <ResponsiveContainer width="100%" height="100%">
             <ScatterChart margin={{ top: 10, right: 35, left: -15, bottom: 10 }}>
-              <CartesianGrid stroke="#14141f" strokeDasharray="3 3" />
+              <CartesianGrid stroke="var(--border-color)" strokeDasharray="3 3" />
               <XAxis
                 type="number"
                 dataKey="cd"

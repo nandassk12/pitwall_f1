@@ -62,8 +62,8 @@ export default function AnalyticsTabs({ drivers = [], activeDriver = '', session
       {/* Tab bar header */}
       <div style={{
         display: 'flex',
-        borderBottom: '2px solid #14141f',
-        backgroundColor: '#09090d',
+        borderBottom: '2px solid var(--border-color)',
+        backgroundColor: 'var(--bg-secondary)',
         borderRadius: '6px 6px 0 0',
         padding: '5px 5px 0 5px',
       }}>
@@ -79,7 +79,7 @@ export default function AnalyticsTabs({ drivers = [], activeDriver = '', session
                 fontFamily: 'monospace',
                 fontWeight: 'bold',
                 letterSpacing: '1px',
-                backgroundColor: isActive ? '#0d0d14' : 'transparent',
+                backgroundColor: isActive ? 'var(--bg-tertiary)' : 'transparent',
                 color: isActive ? '#e10600' : '#888899',
                 border: 'none',
                 borderBottom: isActive ? '2px solid #e10600' : '2px solid transparent',

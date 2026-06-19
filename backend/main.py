@@ -14,6 +14,8 @@ from simulator import sim_router
 from panels import panels_router
 from charts import charts_router
 from analytics_routes import analytics_router
+from news_routes import news_router
+from next_race_routes import next_race_router
 
 
 @asynccontextmanager
@@ -54,6 +56,9 @@ app.include_router(charts_router)
 # Mount the analytics router
 app.include_router(analytics_router)
 
+app.include_router(news_router)
+app.include_router(next_race_router)
+
 
 # ── Status ────────────────────────────────────────────────────────────────────
 
@@ -67,6 +72,9 @@ def get_status():
         "currentSession": sess.CURRENT_SESSION_LABEL,
         "loading":        sess.SESSION_LOADING,
         "memoryMB":       round(mem_mb, 1),
+        "year":           sess.CURRENT_SESSION_YEAR,
+        "circuit":        sess.CURRENT_SESSION_CIRCUIT,
+        "sessionType":    sess.CURRENT_SESSION_TYPE,
     }
 
 

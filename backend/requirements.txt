@@ -46,3 +46,4 @@ url-normalize==3.0.0
 urllib3==2.7.0
 uvicorn==0.47.0
 websockets==16.0
+feedparser>=6.0.0

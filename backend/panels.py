@@ -303,6 +303,7 @@ def get_championship(year: int = None, round: int = None):
                         "pos": int(item['position']),
                         "driver": driver_name,
                         "code": d.get('code') or d.get('driverId', '')[:3].upper(),
+                        "driverId": d.get('driverId'),
                         "team": team_name,
                         "points": float(item['points']) if '.' in item['points'] else int(item['points']),
                         "wins": int(item['wins'])
@@ -341,4 +342,49 @@ def get_championship(year: int = None, round: int = None):
         raise HTTPException(
             status_code=502,
             detail=f"Championship standings fetching failed: {str(e)}"
+        )
+
+
+DRIVER_RESULTS_CACHE = {}
+
+@panels_router.get("/api/panels/driver-results")
+def get_driver_results(year: int, driver_id: str):
+    """
+    Fetches actual race-by-race results for a driver in a specific season.
+    """
+    cache_key = (year, driver_id)
+    if cache_key in DRIVER_RESULTS_CACHE:
+        return DRIVER_RESULTS_CACHE[cache_key]
+
+    try:
+        url = f"https://api.jolpi.ca/ergast/f1/{year}/drivers/{driver_id}/results.json"
+        res = requests.get(url, timeout=8)
+        res.raise_for_status()
+        data = res.json()
+
+        races = []
+        races_data = data.get('MRData', {}).get('RaceTable', {}).get('Races', [])
+        for r in races_data:
+            results = r.get('Results', [])
+            if results:
+                res_item = results[0]
+                points_str = res_item.get('points', '0')
+                points_val = float(points_str) if '.' in points_str else int(points_str)
+                races.append({
+                    "round": int(r['round']),
+                    "raceName": r['raceName'],
+                    "shortName": r['raceName'].replace('Grand Prix', '').replace('  ', ' ').strip(),
+                    "position": res_item.get('positionText', res_item.get('position', 'N/A')),
+                    "points": points_val
+                })
+
+        result = {"races": races}
+        DRIVER_RESULTS_CACHE[cache_key] = result
+        return result
+
+    except Exception as e:
+        print(f"Error fetching driver results for {driver_id} in {year}: {e}")
+        raise HTTPException(
+            status_code=502,
+            detail=f"Failed to fetch driver results: {str(e)}"
         )

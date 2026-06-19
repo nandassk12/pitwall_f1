@@ -7,8 +7,8 @@ const CustomTooltip = ({ active, payload }) => {
 
   return (
     <div style={{
-      backgroundColor: '#09090d',
-      border: '1px solid #14141f',
+      backgroundColor: 'var(--bg-secondary)',
+      border: '1px solid var(--border-color)',
       padding: '8px 12px',
       borderRadius: '4px',
       fontFamily: 'monospace',
@@ -71,28 +71,28 @@ export default function TelemetryCharts({ speedData = [], throttleData = [], rpm
     <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
       {/* DIGITAL METERS */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
-        <div style={{ backgroundColor: '#09090d', padding: '10px', borderRadius: '6px', border: '1px solid #14141f' }}>
+        <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '10px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#555666', fontSize: '10px' }}><Gauge size={12}/> VELOCITY</div>
           <div style={{ fontSize: '18px', fontWeight: 'bold', marginTop: '4px', color: '#fff' }}>{currentFrame.speed ?? '—'} <span style={{ fontSize: '10px', color: '#444552' }}>KMH</span></div>
         </div>
-        <div style={{ backgroundColor: '#09090d', padding: '10px', borderRadius: '6px', border: '1px solid #14141f' }}>
+        <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '10px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#555666', fontSize: '10px' }}><Cpu size={12}/> RPM TRACE</div>
           <div style={{ fontSize: '18px', fontWeight: 'bold', marginTop: '4px', color: '#ffea00' }}>{currentRpm.rpm ?? '—'}</div>
         </div>
-        <div style={{ backgroundColor: '#09090d', padding: '10px', borderRadius: '6px', border: '1px solid #14141f' }}>
+        <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '10px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#555666', fontSize: '10px' }}><Navigation size={12}/> RATIO</div>
           <div style={{ fontSize: '18px', fontWeight: '900', marginTop: '4px', color: '#00e676' }}>GEAR {currentRpm.gear ?? '—'}</div>
         </div>
-        <div style={{ backgroundColor: '#09090d', padding: '10px', borderRadius: '6px', border: '1px solid #14141f' }}>
+        <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '10px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#555666', fontSize: '10px' }}><Wind size={12}/> DOWNFORCE</div>
           <div style={{ fontSize: '18px', fontWeight: 'bold', marginTop: '4px', color: '#29b6f6' }}>{currentFrame.downforceKg ?? '—'} <span style={{ fontSize: '10px', color: '#444552' }}>KG</span></div>
         </div>
       </div>
 
       {/* LAP PROGRESS BAR */}
-      <div style={{ backgroundColor: '#09090d', border: '1px solid #14141f', borderRadius: '6px', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
         <span style={{ fontSize: '10px', color: '#555666', flexShrink: 0 }}>LAP TRACE</span>
-        <div style={{ flex: 1, height: '4px', backgroundColor: '#14141f', borderRadius: '2px', overflow: 'hidden' }}>
+        <div style={{ flex: 1, height: '4px', backgroundColor: 'var(--border-color)', borderRadius: '2px', overflow: 'hidden' }}>
           <div style={{
             height: '100%',
             width: `${total > 0 ? (playhead / total) * 100 : 0}%`,
@@ -107,7 +107,7 @@ export default function TelemetryCharts({ speedData = [], throttleData = [], rpm
       </div>
 
       {/* SPEED AREA CHART */}
-      <div style={{ backgroundColor: '#09090d', border: '1px solid #14141f', borderRadius: '6px', padding: '12px' }}>
+      <div style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '12px' }}>
         <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#fff', marginBottom: '10px', display: 'flex', justifyContent: 'space-between' }}>
           <span>VELOCITY CURVE OVERLAY VS POLE BASELINE</span>
           <span style={{ color: '#e10600' }}>TARGET COMP: {activeDriver}</span>
@@ -121,7 +121,7 @@ export default function TelemetryCharts({ speedData = [], throttleData = [], rpm
                   <stop offset="95%" stopColor="#e10600" stopOpacity={0}/>
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="2 2" stroke="#14141f" />
+              <CartesianGrid strokeDasharray="2 2" stroke="var(--border-color)" />
               <XAxis dataKey="time" hide />
               <YAxis stroke="#444552" domain={[60, 310]} fontSize={10} />
               <Tooltip content={<CustomTooltip />} />
@@ -142,12 +142,12 @@ export default function TelemetryCharts({ speedData = [], throttleData = [], rpm
       </div>
 
       {/* THROTTLE / BRAKE LINE CHART */}
-      <div style={{ backgroundColor: '#09090d', border: '1px solid #14141f', borderRadius: '6px', padding: '12px' }}>
+      <div style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '12px' }}>
         <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#fff', marginBottom: '10px' }}>MECHANICAL FORCES (THROTTLE INPUT VS BRAKE LINE)</div>
         <div style={{ width: '100%', height: '130px' }}>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={visibleThrottle} margin={{ left: -25, right: 5 }}>
-              <CartesianGrid strokeDasharray="2 2" stroke="#14141f" />
+              <CartesianGrid strokeDasharray="2 2" stroke="var(--border-color)" />
               <XAxis dataKey="time" hide />
               <YAxis stroke="#444552" domain={[0, 100]} fontSize={10} />
               <Tooltip content={<CustomTooltip />} />
@@ -159,14 +159,14 @@ export default function TelemetryCharts({ speedData = [], throttleData = [], rpm
       </div>
 
       {/* RPM TRACE */}
-      <div style={{ backgroundColor: '#09090d', border: '1px solid #14141f', borderRadius: '6px', padding: '12px' }}>
+      <div style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '12px' }}>
         <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#fff', marginBottom: '10px' }}>
           ENGINE RPM TRACE
         </div>
         <div style={{ width: '100%', height: '110px' }}>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={visibleRpm} margin={{ left: -25, right: 5 }}>
-              <CartesianGrid strokeDasharray="2 2" stroke="#14141f" />
+              <CartesianGrid strokeDasharray="2 2" stroke="var(--border-color)" />
               <XAxis dataKey="speed" hide />
               <YAxis stroke="#444552" domain={[6000, 15000]} fontSize={10} />
               <Tooltip content={<CustomTooltip />} />
@@ -178,14 +178,14 @@ export default function TelemetryCharts({ speedData = [], throttleData = [], rpm
       </div>
 
       {/* GEAR SEQUENCE */}
-      <div style={{ backgroundColor: '#09090d', border: '1px solid #14141f', borderRadius: '6px', padding: '12px' }}>
+      <div style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '12px' }}>
         <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#fff', marginBottom: '10px' }}>
           GEAR RATIO SEQUENCE
         </div>
         <div style={{ width: '100%', height: '90px' }}>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={visibleRpm} margin={{ left: -25, right: 5 }}>
-              <CartesianGrid strokeDasharray="2 2" stroke="#14141f" />
+              <CartesianGrid strokeDasharray="2 2" stroke="var(--border-color)" />
               <XAxis dataKey="speed" hide />
               <YAxis stroke="#444552" domain={[1, 8]}
                      ticks={[1,2,3,4,5,6,7,8]} fontSize={10} />
