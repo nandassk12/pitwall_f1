@@ -307,141 +307,253 @@ export default function TelemetryPage() {
 
   };
 
-  const getSeed = (str) => {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      hash = str.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    return hash / 10000;
-  };
+  const [speedData, setSpeedData] = useState([]);
+  const [speedLoading, setSpeedLoading] = useState(false);
+  const [speedError, setSpeedError] = useState(null);
 
-  const driverOptions = drivers.length > 0 ? drivers.map((d) => d.name) : ['VER', 'HAM', 'LEC', 'NOR', 'SAI', 'RUS', 'PIA', 'ALO', 'GAS', 'TSU', 'ALB', 'HUL', 'MAG', 'BOT', 'ZHO', 'OCO', 'STR', 'SAR'];
-  const lapOptions = Array.from({ length: 53 }, (_, i) => i + 1);
-  const compoundOptions = ['SOFT', 'MEDIUM', 'HARD', 'INTER', 'WET'];
+  const [gearShiftsData, setGearShiftsData] = useState([]);
+  const [gearShiftsLoading, setGearShiftsLoading] = useState(false);
+  const [gearShiftsError, setGearShiftsError] = useState(null);
 
-  // 1. Generate Speed Trace
-  const getSpeedTraceData = (driver, lap) => {
-    const seed = getSeed(driver + lap);
-    const data = [];
-    const length = 50;
-    for (let i = 0; i < length; i++) {
-      const distance = Math.round((i * 5800) / (length - 1));
-      const base = 220 + Math.sin(i * 0.4) * 60 - Math.cos(i * 0.8) * 35;
-      const variance = Math.sin(i + seed) * 12;
-      const speed = Math.max(78, Math.min(335, Math.round(base + variance)));
-      data.push({ distance, speed });
-    }
-    return data;
-  };
+  const [pedalInputsData, setPedalInputsData] = useState([]);
+  const [pedalInputsLoading, setPedalInputsLoading] = useState(false);
+  const [pedalInputsError, setPedalInputsError] = useState(null);
 
-  // 2. Generate Gear Shifts Step Data
-  const getGearShiftsData = (driver, lap) => {
-    const seed = getSeed(driver + lap);
-    const data = [];
-    let currentGear = 3;
-    const steps = 30;
-    for (let i = 0; i < steps; i++) {
-      const time = Math.round((i * 80000) / (steps - 1));
-      if (Math.sin(i * 0.7 + seed) > 0.3) {
-        currentGear = Math.max(1, Math.min(8, currentGear + (Math.cos(i + seed) > 0 ? 1 : -1)));
-      }
-      data.push({ time, gear: currentGear });
-    }
-    return data;
-  };
+  const [rpmData, setRpmData] = useState([]);
+  const [rpmLoading, setRpmLoading] = useState(false);
+  const [rpmError, setRpmError] = useState(null);
 
-  // 3. Generate Pedal Inputs
-  const getPedalInputsData = (driver, lap) => {
-    const seed = getSeed(driver + lap);
-    const data = [];
-    const length = 50;
-    for (let i = 0; i < length; i++) {
-      const distance = Math.round((i * 5800) / (length - 1));
-      const isCorner = Math.sin(i * 0.55 + seed) > 0.45;
-      let throttle = 100;
-      let brake = 0;
-      if (isCorner) {
-        throttle = Math.max(0, Math.round(15 + Math.sin(i) * 15));
-        brake = Math.max(0, Math.round(85 + Math.cos(i) * 10));
-      } else {
-        throttle = Math.max(75, Math.round(98 + Math.sin(i) * 3));
-        brake = 0;
-      }
-      data.push({ distance, throttle, brake });
-    }
-    return data;
-  };
+  const [gforceData, setGforceData] = useState([]);
+  const [gforceLoading, setGforceLoading] = useState(false);
+  const [gforceError, setGforceError] = useState(null);
 
-  // 4. Generate RPM Trace
-  const getRpmData = (driver, lap) => {
-    const seed = getSeed(driver + lap);
-    const data = [];
-    const length = 50;
-    for (let i = 0; i < length; i++) {
-      const time = Math.round((i * 80000) / (length - 1));
-      const revCycle = (i % 7) / 7;
-      const rpm = Math.round(10500 + revCycle * 4200 + Math.sin(i + seed) * 180);
-      data.push({ time, rpm });
-    }
-    return data;
-  };
+  const [gearSigData, setGearSigData] = useState([]);
+  const [gearSigLoading, setGearSigLoading] = useState(false);
+  const [gearSigError, setGearSigError] = useState(null);
 
-  // 5. Generate G-Force Coordinates
-  const getGForceData = (driver, lap) => {
-    const seed = getSeed(driver + lap);
-    const data = [];
-    const length = 25;
-    for (let i = 0; i < length; i++) {
-      const lat = Number((Math.sin(i * 0.6 + seed) * 2.6).toFixed(2));
-      const long = Number((Math.cos(i * 0.4 + seed) * 1.8).toFixed(2));
-      data.push({ lat, long });
-    }
-    return data;
-  };
+  const [tyreData, setTyreData] = useState([]);
+  const [tyreLoading, setTyreLoading] = useState(false);
+  const [tyreError, setTyreError] = useState(null);
 
-  // 5b. Generate G-Force Trace Time-Series
-  const getGForceTraceData = (driver, lap) => {
-    const seed = getSeed(driver + lap);
-    const data = [];
-    const length = 50;
-    for (let i = 0; i < length; i++) {
-      const time = Math.round((i * 80000) / (length - 1));
-      const longG = Number((Math.sin(i * 0.5 + seed) * 3.5).toFixed(2));
-      const latG = Number((Math.cos(i * 0.3 + seed) * 2.8).toFixed(2));
-      data.push({ time, longG, latG });
-    }
-    return data;
-  };
+  const [brakeTempsState, setBrakeTempsState] = useState({ front: 810, rear: 590 });
+  const [brakeLoading, setBrakeLoading] = useState(false);
+  const [brakeError, setBrakeError] = useState(null);
 
-  // 6. Generate Gear Signature Durations
-  const getGearSignatureData = (driver, lap) => {
-    const seed = getSeed(driver + lap);
-    const baseDurations = [4, 7, 10, 15, 25, 18, 13, 8];
-    return baseDurations.map((base, idx) => {
-      const variance = Math.sin(idx + seed) * 2.5;
-      const pct = Math.max(1, Math.round(base + variance));
-      return { gear: `G${idx + 1}`, duration: pct };
-    });
-  };
+  // Speed Trace fetch effect
+  useEffect(() => {
+    if (!sessionLoaded || !c1Driver) return;
+    setSpeedLoading(true);
+    setSpeedError(null);
+    fetch(`${API_BASE}/api/chart/speed?driver=${c1Driver}`)
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP error ${r.status}`);
+        return r.json();
+      })
+      .then(data => {
+        const mapped = data.map((p) => ({
+          ...p,
+          distance: p.time
+        }));
+        setSpeedData(mapped);
+        setSpeedLoading(false);
+      })
+      .catch(err => {
+        console.error('Failed to load speed trace:', err);
+        setSpeedError(err.message);
+        setSpeedLoading(false);
+      });
+  }, [c1Driver, sessionLoaded]);
 
-  // 7. Generate Tyre Degradation Forecast
-  const getTyreDegradationData = (driver, compound) => {
-    const rate = compound === 'SOFT' ? 2.4 : compound === 'MEDIUM' ? 1.7 : compound === 'HARD' ? 1.1 : 0.8;
-    const data = [];
-    for (let lap = 1; lap <= 60; lap++) {
-      const wear = Math.min(100, Math.round(lap * rate));
-      data.push({ lap, wear, limit: 80 });
-    }
-    return data;
-  };
+  // Gear Shifts fetch effect
+  useEffect(() => {
+    if (!sessionLoaded || !c2Driver) return;
+    setGearShiftsLoading(true);
+    setGearShiftsError(null);
+    fetch(`${API_BASE}/api/chart/rpm-vs-speed?driver=${c2Driver}`)
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP error ${r.status}`);
+        return r.json();
+      })
+      .then(data => {
+        const mapped = data.map((p, idx) => ({
+          time: idx,
+          gear: p.gear
+        }));
+        setGearShiftsData(mapped);
+        setGearShiftsLoading(false);
+      })
+      .catch(err => {
+        console.error('Failed to load gear shifts:', err);
+        setGearShiftsError(err.message);
+        setGearShiftsLoading(false);
+      });
+  }, [c2Driver, sessionLoaded]);
 
-  // 8. Generate Brake Temperatures
-  const getBrakeTemps = (driver, lap) => {
-    const seed = getSeed(driver + lap);
-    const front = Math.round(810 + Math.sin(seed) * 80);
-    const rear = Math.round(590 + Math.cos(seed) * 65);
-    return { front, rear };
-  };
+  // Pedal Inputs fetch effect
+  useEffect(() => {
+    if (!sessionLoaded || !c3Driver) return;
+    setPedalInputsLoading(true);
+    setPedalInputsError(null);
+    fetch(`${API_BASE}/api/chart/throttle?driver=${c3Driver}`)
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP error ${r.status}`);
+        return r.json();
+      })
+      .then(data => {
+        const mapped = data.map((p) => ({
+          ...p,
+          distance: p.time
+        }));
+        setPedalInputsData(mapped);
+        setPedalInputsLoading(false);
+      })
+      .catch(err => {
+        console.error('Failed to load pedal inputs:', err);
+        setPedalInputsError(err.message);
+        setPedalInputsLoading(false);
+      });
+  }, [c3Driver, sessionLoaded]);
+
+  // RPM Trace fetch effect
+  useEffect(() => {
+    if (!sessionLoaded || !c4Driver) return;
+    setRpmLoading(true);
+    setRpmError(null);
+    fetch(`${API_BASE}/api/chart/rpm-vs-speed?driver=${c4Driver}`)
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP error ${r.status}`);
+        return r.json();
+      })
+      .then(data => {
+        const mapped = data.map((p, idx) => ({
+          time: idx,
+          rpm: p.rpm
+        }));
+        setRpmData(mapped);
+        setRpmLoading(false);
+      })
+      .catch(err => {
+        console.error('Failed to load RPM trace:', err);
+        setRpmError(err.message);
+        setRpmLoading(false);
+      });
+  }, [c4Driver, sessionLoaded]);
+
+  // G-Force fetch effect
+  useEffect(() => {
+    if (!sessionLoaded || !c5Driver) return;
+    setGforceLoading(true);
+    setGforceError(null);
+    fetch(`${API_BASE}/api/chart/gforce?driver=${c5Driver}`)
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP error ${r.status}`);
+        return r.json();
+      })
+      .then(data => {
+        setGforceData(data);
+        setGforceLoading(false);
+      })
+      .catch(err => {
+        console.error('Failed to load G-Force data:', err);
+        setGforceError(err.message);
+        setGforceLoading(false);
+      });
+  }, [c5Driver, sessionLoaded]);
+
+  // Gear Signature fetch effect
+  useEffect(() => {
+    if (!sessionLoaded || !c6Driver) return;
+    setGearSigLoading(true);
+    setGearSigError(null);
+    fetch(`${API_BASE}/api/chart/rpm-vs-speed?driver=${c6Driver}`)
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP error ${r.status}`);
+        return r.json();
+      })
+      .then(data => {
+        const gearCounts = Array(8).fill(0);
+        let total = 0;
+        data.forEach(p => {
+          const g = parseInt(p.gear);
+          if (g >= 1 && g <= 8) {
+            gearCounts[g - 1]++;
+            total++;
+          }
+        });
+        const sig = gearCounts.map((count, idx) => ({
+          gear: `G${idx + 1}`,
+          duration: total > 0 ? Math.round((count / total) * 100) : 0
+        }));
+        setGearSigData(sig);
+        setGearSigLoading(false);
+      })
+      .catch(err => {
+        console.error('Failed to load gear signature:', err);
+        setGearSigError(err.message);
+        setGearSigLoading(false);
+      });
+  }, [c6Driver, sessionLoaded]);
+
+  // Tyre degradation forecast fetch effect
+  useEffect(() => {
+    if (!sessionLoaded || !c7Driver) return;
+    setTyreLoading(true);
+    setTyreError(null);
+    fetch(`${API_BASE}/api/chart/tyres?driver=${c7Driver}`)
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP error ${r.status}`);
+        return r.json();
+      })
+      .then(data => {
+        const mapped = data.map((p) => ({
+          lap: p.lap,
+          wear: p.tyreWear,
+          limit: 80
+        }));
+        setTyreData(mapped);
+        setTyreLoading(false);
+      })
+      .catch(err => {
+        console.error('Failed to load tyre degradation data:', err);
+        setTyreError(err.message);
+        setTyreLoading(false);
+      });
+  }, [c7Driver, sessionLoaded]);
+
+  // Brake temperature average fetch effect
+  useEffect(() => {
+    if (!sessionLoaded || !c8Driver) return;
+    setBrakeLoading(true);
+    setBrakeError(null);
+    fetch(`${API_BASE}/api/chart/throttle?driver=${c8Driver}`)
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP error ${r.status}`);
+        return r.json();
+      })
+      .then(data => {
+        const avgBrake = data.reduce((sum, p) => sum + p.brake, 0) / (data.length || 1);
+        const front = Math.round(750 + avgBrake * 3.5);
+        const rear = Math.round(550 + avgBrake * 2.5);
+        setBrakeTempsState({ front, rear });
+        setBrakeLoading(false);
+      })
+      .catch(err => {
+        console.error('Failed to load brake temperatures:', err);
+        setBrakeError(err.message);
+        setBrakeLoading(false);
+      });
+  }, [c8Driver, sessionLoaded]);
+
+  const getSeed = () => 0;
+  const getSpeedTraceData = () => speedData;
+  const getGearShiftsData = () => gearShiftsData;
+  const getPedalInputsData = () => pedalInputsData;
+  const getRpmData = () => rpmData;
+  const getGForceData = () => gforceData.map(p => ({ lat: p.latG, long: p.longG }));
+  const getGForceTraceData = () => gforceData.map(p => ({ time: p.time, longG: p.longG, latG: p.latG }));
+  const getGearSignatureData = () => gearSigData;
+  const getTyreDegradationData = () => tyreData;
+  const getBrakeTemps = () => brakeTempsState;;
 
   const brakeTemps = getBrakeTemps(c8Driver, c8Lap);
   const frontPct = Math.min(100, Math.round((brakeTemps.front / 1100) * 100));
@@ -754,6 +866,8 @@ export default function TelemetryPage() {
                         <span>X: TRACK DISTANCE [m]</span>
                       </div>
                       <div className="flex-grow relative">
+                        {speedLoading && <div className="absolute inset-0 bg-[var(--bg-primary)]/80 flex items-center justify-center z-10 text-[#e10600] font-bold">LOADING SPEED TRACE...</div>}
+                        {speedError && <div className="absolute inset-0 bg-[var(--bg-primary)]/80 flex items-center justify-center z-10 text-[#ff4444] font-bold">ERROR: {speedError}</div>}
                         <ResponsiveContainer width="100%" height="100%">
                           <LineChart data={getSpeedTraceData(c1Driver, c1Lap)} margin={{ top: 10, right: 10, left: -25, bottom: 5 }}>
                             <XAxis dataKey="distance" stroke="#1e1e2e" tick={false} />
@@ -821,6 +935,8 @@ export default function TelemetryPage() {
                         <span>X: TIME [ms]</span>
                       </div>
                       <div className="flex-grow relative">
+                        {gearShiftsLoading && <div className="absolute inset-0 bg-[var(--bg-primary)]/80 flex items-center justify-center z-10 text-[#e10600] font-bold">LOADING GEAR SHIFTS...</div>}
+                        {gearShiftsError && <div className="absolute inset-0 bg-[var(--bg-primary)]/80 flex items-center justify-center z-10 text-[#ff4444] font-bold">ERROR: {gearShiftsError}</div>}
                         <ResponsiveContainer width="100%" height="100%">
                           <LineChart data={getGearShiftsData(c2Driver, c2Lap)} margin={{ top: 10, right: 10, left: -25, bottom: 5 }}>
                             <XAxis dataKey="time" stroke="#1e1e2e" tick={false} />
@@ -894,6 +1010,8 @@ export default function TelemetryPage() {
                         <span>X: TRACK DISTANCE [m]</span>
                       </div>
                       <div className="flex-grow relative">
+                        {pedalInputsLoading && <div className="absolute inset-0 bg-[var(--bg-primary)]/80 flex items-center justify-center z-10 text-[#e10600] font-bold">LOADING PEDAL INPUTS...</div>}
+                        {pedalInputsError && <div className="absolute inset-0 bg-[var(--bg-primary)]/80 flex items-center justify-center z-10 text-[#ff4444] font-bold">ERROR: {pedalInputsError}</div>}
                         <ResponsiveContainer width="100%" height="100%">
                           <LineChart data={getPedalInputsData(c3Driver, c3Lap)} margin={{ top: 10, right: 10, left: -25, bottom: 5 }}>
                             <XAxis dataKey="distance" stroke="#1e1e2e" tick={false} />
@@ -957,6 +1075,8 @@ export default function TelemetryPage() {
                         <span>X: TIME [ms]</span>
                       </div>
                       <div className="flex-grow relative">
+                        {rpmLoading && <div className="absolute inset-0 bg-[var(--bg-primary)]/80 flex items-center justify-center z-10 text-[#e10600] font-bold">LOADING RPM TRACE...</div>}
+                        {rpmError && <div className="absolute inset-0 bg-[var(--bg-primary)]/80 flex items-center justify-center z-10 text-[#ff4444] font-bold">ERROR: {rpmError}</div>}
                         <ResponsiveContainer width="100%" height="100%">
                           <LineChart data={getRpmData(c4Driver, c4Lap)} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
                             <XAxis dataKey="time" stroke="#1e1e2e" tick={false} />
@@ -1018,7 +1138,9 @@ export default function TelemetryPage() {
                         </div>
                       </div>
                     </header>
-                    <div className="flex-grow bg-[var(--bg-primary)] technical-grid p-6 flex flex-col xl:flex-row items-center justify-center gap-6 overflow-hidden">
+                    <div className="flex-grow bg-[var(--bg-primary)] technical-grid relative p-6 flex flex-col xl:flex-row items-center justify-center gap-6 overflow-hidden">
+                      {gforceLoading && <div className="absolute inset-0 bg-[var(--bg-primary)]/80 flex items-center justify-center z-20 text-[#e10600] font-bold">LOADING G-FORCE DATA...</div>}
+                      {gforceError && <div className="absolute inset-0 bg-[var(--bg-primary)]/80 flex items-center justify-center z-20 text-[#ff4444] font-bold">ERROR: {gforceError}</div>}
                       {/* G-Force Radar Layout */}
                       <div className="relative flex-shrink-0 flex items-center justify-center" style={{ width: '240px', height: '240px' }}>
                         {/* Concentric circles */}
@@ -1137,6 +1259,8 @@ export default function TelemetryPage() {
                         <span>X: TRANSMISSION STAGES</span>
                       </div>
                       <div className="flex-grow relative">
+                        {gearSigLoading && <div className="absolute inset-0 bg-[var(--bg-primary)]/80 flex items-center justify-center z-10 text-[#e10600] font-bold">LOADING GEAR SIGNATURE...</div>}
+                        {gearSigError && <div className="absolute inset-0 bg-[var(--bg-primary)]/80 flex items-center justify-center z-10 text-[#ff4444] font-bold">ERROR: {gearSigError}</div>}
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart data={getGearSignatureData(c6Driver, c6Lap)} margin={{ top: 10, right: 10, left: -25, bottom: 5 }}>
                             <XAxis dataKey="gear" stroke="#1e1e2e" tick={{ fill: '#454655', fontSize: 13 }} />
@@ -1204,6 +1328,8 @@ export default function TelemetryPage() {
                         <span>X: LAPS RUN</span>
                       </div>
                       <div className="flex-grow relative">
+                        {tyreLoading && <div className="absolute inset-0 bg-[var(--bg-primary)]/80 flex items-center justify-center z-10 text-[#e10600] font-bold">LOADING TYRE FORECAST...</div>}
+                        {tyreError && <div className="absolute inset-0 bg-[var(--bg-primary)]/80 flex items-center justify-center z-10 text-[#ff4444] font-bold">ERROR: {tyreError}</div>}
                         <ResponsiveContainer width="100%" height="100%">
                           <AreaChart data={getTyreDegradationData(c7Driver, c7Compound)} margin={{ top: 10, right: 10, left: -25, bottom: 5 }}>
                             <XAxis dataKey="lap" stroke="#1e1e2e" tick={{ fill: '#454655', fontSize: 13 }} />
@@ -1265,6 +1391,8 @@ export default function TelemetryPage() {
                       </div>
                     </header>
                     <div className="flex-grow bg-[var(--bg-primary)] technical-grid relative p-8 flex items-center">
+                      {brakeLoading && <div className="absolute inset-0 bg-[var(--bg-primary)]/80 flex items-center justify-center z-20 text-[#e10600] font-bold">LOADING BRAKE TEMPS...</div>}
+                      {brakeError && <div className="absolute inset-0 bg-[var(--bg-primary)]/80 flex items-center justify-center z-20 text-[#ff4444] font-bold">ERROR: {brakeError}</div>}
                       <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-8">
                         
                         {/* Front Axle */}
