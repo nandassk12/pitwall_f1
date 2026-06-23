@@ -49,18 +49,6 @@ export default function CircuitMap({
     return lineGen(circuitGeometry.points) || '';
   }, [circuitGeometry, lineGen]);
 
-  // ── Early return: no data yet ──────────────────────────────────────────────
-  if (!circuitGeometry) {
-    return (
-      <div style={cardStyle}>
-        <div style={headerStyle}>CIRCUIT — LIVE MAP</div>
-        <div style={{ ...svgWrapStyle(width, height), display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <span style={{ fontSize: '10px', color: '#555666', letterSpacing: '1px' }}>AWAITING GEOMETRY...</span>
-        </div>
-      </div>
-    );
-  }
-
   // ── Resolve effective positions ────────────────────────────────────────────
   const effectivePositions = useMemo(() => {
     const posDict = simState?.positions;
@@ -79,9 +67,6 @@ export default function CircuitMap({
     }
     return allPositions;
   }, [simState, allPositions]);
-
-  // ── Hover tooltip data ─────────────────────────────────────────────────────
-  const hoveredPos = effectivePositions.find(p => p.driver === hoveredDriver);
 
   // ── DRS zone polyline strings ──────────────────────────────────────────────
   // Pre-compute SVG polyline points strings for each DRS zone segment
@@ -106,6 +91,21 @@ export default function CircuitMap({
       x2: xScale(pts[i2].x), y2: yScale(pts[i2].y),
     };
   }, [circuitGeometry, xScale, yScale]);
+
+  // ── Early return: no data yet ──────────────────────────────────────────────
+  if (!circuitGeometry) {
+    return (
+      <div style={cardStyle}>
+        <div style={headerStyle}>CIRCUIT — LIVE MAP</div>
+        <div style={{ ...svgWrapStyle(width, height), display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ fontSize: '10px', color: '#555666', letterSpacing: '1px' }}>AWAITING GEOMETRY...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Hover tooltip data ─────────────────────────────────────────────────────
+  const hoveredPos = effectivePositions.find(p => p.driver === hoveredDriver);
 
   return (
     <div style={cardStyle}>

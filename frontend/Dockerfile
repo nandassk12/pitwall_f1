@@ -1,4 +1,4 @@
-FROM node:18-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
@@ -6,8 +6,16 @@ COPY package*.json ./
 
 RUN npm install
 
-COPY .  .
-# Expose Vite's default network hosting port
+COPY . .
+
+ARG VITE_API_BASE
+ENV VITE_API_BASE=$VITE_API_BASE
+
+RUN npm run build
+
+FROM nginx:alpine
+COPY --from=0 /app/dist /usr/share/nginx/html
+
 EXPOSE 3000
 
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+CMD ["nginx", "-g", "daemon off;"]

@@ -136,4 +136,3 @@ def get_chart_demand(driver: str):
         }
         for p in stream
     ]
-

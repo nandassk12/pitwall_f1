@@ -294,13 +294,58 @@ def compile_session_data(session):
 
         cumulative_points = season_points_map.get(drv_code.upper(), 0)
 
+        # Compute interval (difference to previous car)
+        interval_string = ""
+        if enum_rank == 0:
+            interval_string = "LEADER"
+        elif is_race:
+            status_str_prev = str(race_results.iloc[enum_rank - 1].get('Status', 'Finished'))
+            if status_str == "Finished" or not status_str:
+                if status_str_prev == "Finished" or not status_str_prev:
+                    if pd.notna(row.get('Time')):
+                        current_sec = row['Time'].total_seconds()
+                        if enum_rank == 1:
+                            diff_sec = current_sec
+                        elif pd.notna(race_results.iloc[enum_rank - 1].get('Time')):
+                            prev_sec = race_results.iloc[enum_rank - 1]['Time'].total_seconds()
+                            diff_sec = current_sec - prev_sec
+                        else:
+                            diff_sec = None
+                        
+                        if diff_sec is not None:
+                            interval_string = f"+{round(diff_sec, 3)}s"
+            elif status_str == "Lapped":
+                leader_laps = race_results.iloc[0]['Laps']
+                drv_laps = row.get('Laps', leader_laps)
+                laps_diff = int(leader_laps - drv_laps) if pd.notna(leader_laps) and pd.notna(drv_laps) else 0
+                
+                prev_row = race_results.iloc[enum_rank - 1]
+                prev_laps = prev_row.get('Laps', leader_laps)
+                prev_laps_diff = int(leader_laps - prev_laps) if pd.notna(leader_laps) and pd.notna(prev_laps) else 0
+                
+                relative_laps_diff = laps_diff - prev_laps_diff
+                if relative_laps_diff == 1:
+                    interval_string = "+1 Lap"
+                elif relative_laps_diff > 1:
+                    interval_string = f"+{relative_laps_diff} Laps"
+                else:
+                    interval_string = "+1 Lap"
+            else:
+                interval_string = "DNF"
+
+        if not interval_string:
+            interval_string = gap_string
+
         LIVE_STANDINGS_TOWER.append({
             "pos":          enum_rank + 1,
-            "no":           int(row['DriverNumber']),
+            "no":           int(row['DriverNumber']) if pd.notna(row.get('DriverNumber')) else 0,
             "name":         drv_code,
             "fullName":     full_name,
             "team":         row['TeamName'],
             "gap":          gap_string,
+            "interval":     interval_string,
+            "grid":         int(row['GridPosition']) if pd.notna(row.get('GridPosition')) else 0,
+            "status":       status_str,
             "pointsScored": points_scored,
             "seasonPoints": cumulative_points,
             "hasTelemetry": False,

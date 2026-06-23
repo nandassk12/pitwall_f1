@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import API_BASE from '../config';
 
 const COMPOUND_COLORS = {
   SOFT:    { bg: '#e8002d', text: '#fff' },
@@ -16,7 +17,7 @@ export default function PitStrategy() {
   const [hoveredStint, setHoveredStint] = useState(null);
 
   useEffect(() => {
-    fetch('/api/panels/pit-strategy')
+    fetch(`${API_BASE}/api/panels/pit-strategy`)
       .then(r => {
         if (!r.ok) throw new Error('Simulation or session data not active.');
         return r.json();

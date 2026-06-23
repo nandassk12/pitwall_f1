@@ -551,22 +551,25 @@ export default function ChampionshipConstructorStandings({ selectedYear: propSel
       <aside className="w-[360px] flex-shrink-0 bg-[var(--bg-secondary)] border-r border-[var(--border-color)] flex flex-col overflow-hidden">
         <div className="p-3 bg-[var(--bg-secondary)] border-b border-[var(--border-color)] flex justify-between items-center">
           <h3 className="text-[17px] font-bold tracking-[3px] text-white uppercase">Constructor Standings</h3>
-          <select
-            value={selectedYear}
-            onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-            className="bg-[#e10600] text-white hover:bg-[#ff1e16] px-2.5 py-0.5 rounded-sm text-[16px] font-bold font-mono outline-none cursor-pointer transition-colors appearance-none pr-6 uppercase"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='4' viewBox='0 0 8 4'%3E%3Cpath d='M1 1l3 2 3-2' stroke='%23ffffff' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`,
-              backgroundRepeat: 'no-repeat',
-              backgroundPosition: 'right 8px center',
-            }}
-          >
-            {years.map(y => (
-              <option key={y} value={y} className="bg-[var(--bg-secondary)] text-white font-bold">
-                {y} SEASON
-              </option>
-            ))}
-          </select>
+          <div className="flex items-center gap-1.5">
+            <span className="text-white font-mono font-bold text-[16px] uppercase select-none">SEASON:</span>
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+              className="bg-[#e10600] text-white hover:bg-[#ff1e16] px-2.5 py-0.5 rounded-sm text-[16px] font-bold font-mono outline-none cursor-pointer transition-colors appearance-none pr-6 uppercase"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='4' viewBox='0 0 8 4'%3E%3Cpath d='M1 1l3 2 3-2' stroke='%23ffffff' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`,
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'right 8px center',
+              }}
+            >
+              {years.map(y => (
+                <option key={y} value={y} className="bg-[var(--bg-secondary)] text-white font-bold">
+                  {y}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
         
         <div className="flex-1 overflow-y-auto custom-scrollbar">

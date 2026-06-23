@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ShieldAlert, AlertTriangle } from 'lucide-react';
 import CircuitMap from './CircuitMap';
 import API_BASE from '../config';
+import SimulationControls from './SimulationControls';
 
 export default function VehicleDiagnostics({
   liveTick,
@@ -113,6 +114,9 @@ export default function VehicleDiagnostics({
           <span style={{ fontWeight: 'bold', color: '#fff' }}>{liveTick.tyreWearPercent}%</span>
         </div>
       </div>
+
+      {/* COMPACT SIMULATION CONTROLS */}
+      <SimulationControls />
 
     </div>
   );

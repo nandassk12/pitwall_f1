@@ -139,10 +139,10 @@ export default function NavBar() {
           News
         </Link>
         <Link to="/telemetry" style={getLinkStyle('/telemetry')}>
-          Telemetry
+          analytics
         </Link>
         <Link to="/analytics" style={getLinkStyle('/analytics')}>
-          Analytics
+          live (demo)
         </Link>
       </div>
 

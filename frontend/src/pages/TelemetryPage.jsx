@@ -4,6 +4,7 @@ import LapComparison from '../components/LapComparison';
 import TrackDominanceMap from '../components/TrackDominanceMap';
 import PitStrategy from '../components/PitStrategy';
 import TimingTower from '../components/TimingTower';
+import RaceControl from '../components/RaceControl';
 import API_BASE from '../config';
 import {
   ResponsiveContainer,
@@ -18,7 +19,10 @@ import {
   Bar,
   Cell,
   ScatterChart,
-  Scatter
+  Scatter,
+  Legend,
+  ReferenceLine,
+  CartesianGrid
 } from 'recharts';
 
 const SESSION_TYPE_LABELS = {
@@ -37,7 +41,8 @@ const SESSION_LABELS = {
 };
 
 export default function TelemetryPage() {
-  const [activeTab, setActiveTab] = useState('telemetry'); // 'results' | 'strategy' | 'laptimes' | 'dominance' | 'telemetry'
+  const [activeTab, setActiveTab] = useState('telemetry'); // 'results' | 'strategy' | 'laptimes' | 'dominance' | 'telemetry' | 'racecontrol'
+  const [raceControl, setRaceControl] = useState(null);
   const [drivers, setDrivers] = useState([]);
   const [activeDriver, setActiveDriver] = useState('');
   const [loading, setLoading] = useState(true);
@@ -158,6 +163,15 @@ export default function TelemetryPage() {
         setLoading(false);
       });
   }, []);
+
+  // Fetch race control messages whenever a session is loaded
+  useEffect(() => {
+    if (!sessionLoaded) return;
+    fetch(`${API_BASE}/api/race-control`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setRaceControl(data); })
+      .catch(err => console.warn('Failed to load race control:', err));
+  }, [sessionLoaded, loadedSession]);
 
   // Simulating live telemetry update frequency
   useEffect(() => {
@@ -385,6 +399,20 @@ export default function TelemetryPage() {
     return data;
   };
 
+  // 5b. Generate G-Force Trace Time-Series
+  const getGForceTraceData = (driver, lap) => {
+    const seed = getSeed(driver + lap);
+    const data = [];
+    const length = 50;
+    for (let i = 0; i < length; i++) {
+      const time = Math.round((i * 80000) / (length - 1));
+      const longG = Number((Math.sin(i * 0.5 + seed) * 3.5).toFixed(2));
+      const latG = Number((Math.cos(i * 0.3 + seed) * 2.8).toFixed(2));
+      data.push({ time, longG, latG });
+    }
+    return data;
+  };
+
   // 6. Generate Gear Signature Durations
   const getGearSignatureData = (driver, lap) => {
     const seed = getSeed(driver + lap);
@@ -448,7 +476,8 @@ export default function TelemetryPage() {
           </div>
           <div className="flex gap-2 items-center">
             {/* Year Dropdown */}
-            <div className="relative">
+            <div className="flex items-center gap-1.5">
+              <span className="text-white font-mono font-bold text-[14px] uppercase select-none">YEAR:</span>
               <select
                 value={activeYear}
                 onChange={handleYearChange}
@@ -460,15 +489,16 @@ export default function TelemetryPage() {
                   backgroundPosition: 'right 8px center',
                 }}
               >
-                <option value={activeYear} className="bg-[var(--bg-secondary)] text-white">YEAR: {activeYear}</option>
+                <option value={activeYear} className="bg-[var(--bg-secondary)] text-white">{activeYear}</option>
                 {years.filter(y => y !== activeYear).map(y => (
-                  <option key={y} value={y} className="bg-[var(--bg-secondary)] text-white">YEAR: {y}</option>
+                  <option key={y} value={y} className="bg-[var(--bg-secondary)] text-white">{y}</option>
                 ))}
               </select>
             </div>
 
             {/* Venue Dropdown */}
-            <div className="relative">
+            <div className="flex items-center gap-1.5">
+              <span className="text-white font-mono font-bold text-[14px] uppercase select-none">VENUE:</span>
               <select
                 value={activeCircuit}
                 onChange={handleCircuitChange}
@@ -480,17 +510,18 @@ export default function TelemetryPage() {
                   backgroundPosition: 'right 8px center',
                 }}
               >
-                <option value={activeCircuit} className="bg-[var(--bg-secondary)] text-white">VENUE: {activeCircuitShortName.toUpperCase()}</option>
+                <option value={activeCircuit} className="bg-[var(--bg-secondary)] text-white">{activeCircuitShortName.toUpperCase()}</option>
                 {calendar.filter(r => r.name !== activeCircuit).map(race => (
                   <option key={race.name} value={race.name} className="bg-[var(--bg-secondary)] text-white">
-                    VENUE: {race.shortName.toUpperCase()}
+                    {race.shortName.toUpperCase()}
                   </option>
                 ))}
               </select>
             </div>
 
             {/* Session Type Dropdown */}
-            <div className="relative">
+            <div className="flex items-center gap-1.5">
+              <span className="text-white font-mono font-bold text-[14px] uppercase select-none">SESSION:</span>
               <select
                 value={activeSessionType}
                 onChange={handleSessionTypeChange}
@@ -502,10 +533,10 @@ export default function TelemetryPage() {
                   backgroundPosition: 'right 8px center',
                 }}
               >
-                <option value={activeSessionType} className="bg-[var(--bg-secondary)] text-white">SESSION: {(SESSION_LABELS[activeSessionType] || activeSessionType || '').toUpperCase()}</option>
+                <option value={activeSessionType} className="bg-[var(--bg-secondary)] text-white">{(SESSION_LABELS[activeSessionType] || activeSessionType || '').toUpperCase()}</option>
                 {sessionTypes.filter(t => t !== activeSessionType).map(type => (
                   <option key={type} value={type} className="bg-[var(--bg-secondary)] text-white">
-                    SESSION: {(SESSION_LABELS[type] || type).toUpperCase()}
+                    {(SESSION_LABELS[type] || type).toUpperCase()}
                   </option>
                 ))}
               </select>
@@ -579,6 +610,16 @@ export default function TelemetryPage() {
             >
               {activeTab === 'telemetry' ? 'TELEMETRY' : 'Telemetry'}
             </button>
+            <button
+              onClick={() => setActiveTab('racecontrol')}
+              className={`px-4 text-[15px] font-bold h-full border-b-2 flex items-center transition-all ${
+                activeTab === 'racecontrol'
+                  ? 'border-[#e10600] text-[#e10600]'
+                  : 'border-transparent text-[var(--color-muted)] hover:text-white'
+              }`}
+            >
+              {activeTab === 'racecontrol' ? 'RACE CONTROL' : 'Race Control'}
+            </button>
           </div>
         </nav>
       </div>
@@ -646,6 +687,13 @@ export default function TelemetryPage() {
               </div>
             )}
 
+            {/* 6. Race Control Tab */}
+            {activeTab === 'racecontrol' && (
+              <div className="grid grid-cols-1 gap-6">
+                <RaceControl raceControl={raceControl} />
+              </div>
+            )}
+
             {/* 5. Telemetry Tab (Grid of 8 Premium Recharts Graphs) */}
             {activeTab === 'telemetry' && (
               <div className="space-y-6">
@@ -671,27 +719,33 @@ export default function TelemetryPage() {
                       <div className="flex gap-2">
                         <div className="bg-[var(--bg-primary)] border border-[var(--border-color)] px-2.5 py-1 text-[14px] font-mono text-[var(--color-muted)] rounded-[2px] uppercase">CHART: SPEED</div>
                         
-                        <select
-                          value={c1Driver}
-                          onChange={(e) => setC1Driver(e.target.value)}
-                          className="bg-[var(--bg-primary)] border border-[var(--border-color)] pl-2 pr-6 py-1 text-[14px] font-mono text-[var(--color-muted)] hover:text-white hover:border-[#e10600] rounded-[2px] outline-none appearance-none cursor-pointer transition-colors" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='4' viewBox='0 0 8 4'%3E%3Cpath d='M1 1l3 2 3-2' stroke='%23888888' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 6px center' }}
-                        >
-                          <option value={c1Driver} className="bg-[var(--bg-secondary)] text-white">DRIVER: {c1Driver}</option>
-                          {driverOptions.filter(d => d !== c1Driver).map(d => (
-                            <option key={d} value={d} className="bg-[var(--bg-secondary)] text-white">DRIVER: {d}</option>
-                          ))}
-                        </select>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-white font-mono font-bold text-[14px] uppercase select-none">DRIVER:</span>
+                          <select
+                            value={c1Driver}
+                            onChange={(e) => setC1Driver(e.target.value)}
+                            className="bg-[var(--bg-primary)] border border-[var(--border-color)] pl-2.5 pr-10 py-1 text-[14px] font-mono text-[var(--color-muted)] hover:text-white hover:border-[#e10600] rounded-[2px] outline-none appearance-none cursor-pointer transition-colors" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='4' viewBox='0 0 8 4'%3E%3Cpath d='M1 1l3 2 3-2' stroke='%23888888' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
+                          >
+                            <option value={c1Driver} className="bg-[var(--bg-secondary)] text-white">{c1Driver}</option>
+                            {driverOptions.filter(d => d !== c1Driver).map(d => (
+                              <option key={d} value={d} className="bg-[var(--bg-secondary)] text-white">{d}</option>
+                            ))}
+                          </select>
+                        </div>
                         
-                        <select
-                          value={c1Lap}
-                          onChange={(e) => setC1Lap(Number(e.target.value))}
-                          className="bg-[var(--bg-primary)] border border-[var(--border-color)] pl-2 pr-6 py-1 text-[14px] font-mono text-[var(--color-muted)] hover:text-white hover:border-[#e10600] rounded-[2px] outline-none appearance-none cursor-pointer transition-colors" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='4' viewBox='0 0 8 4'%3E%3Cpath d='M1 1l3 2 3-2' stroke='%23888888' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 6px center' }}
-                        >
-                          <option value={c1Lap} className="bg-[var(--bg-secondary)] text-white">LAP: {String(c1Lap).padStart(2, '0')}</option>
-                          {lapOptions.filter(l => l !== c1Lap).map(l => (
-                            <option key={l} value={l} className="bg-[var(--bg-secondary)] text-white">LAP: {String(l).padStart(2, '0')}</option>
-                          ))}
-                        </select>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-white font-mono font-bold text-[14px] uppercase select-none">LAP:</span>
+                          <select
+                            value={c1Lap}
+                            onChange={(e) => setC1Lap(Number(e.target.value))}
+                            className="bg-[var(--bg-primary)] border border-[var(--border-color)] pl-2.5 pr-10 py-1 text-[14px] font-mono text-[var(--color-muted)] hover:text-white hover:border-[#e10600] rounded-[2px] outline-none appearance-none cursor-pointer transition-colors" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='4' viewBox='0 0 8 4'%3E%3Cpath d='M1 1l3 2 3-2' stroke='%23888888' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
+                          >
+                            <option value={c1Lap} className="bg-[var(--bg-secondary)] text-white">{String(c1Lap).padStart(2, '0')}</option>
+                            {lapOptions.filter(l => l !== c1Lap).map(l => (
+                              <option key={l} value={l} className="bg-[var(--bg-secondary)] text-white">{String(l).padStart(2, '0')}</option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
                     </header>
                     <div className="flex-grow bg-[var(--bg-primary)] technical-grid relative p-6 flex flex-col">
@@ -732,27 +786,33 @@ export default function TelemetryPage() {
                       <div className="flex gap-2">
                         <div className="bg-[var(--bg-primary)] border border-[var(--border-color)] px-2.5 py-1 text-[14px] font-mono text-[var(--color-muted)] rounded-[2px] uppercase">CHART: GEAR</div>
                         
-                        <select
-                          value={c2Driver}
-                          onChange={(e) => setC2Driver(e.target.value)}
-                          className="bg-[var(--bg-primary)] border border-[var(--border-color)] pl-2 pr-6 py-1 text-[14px] font-mono text-[var(--color-muted)] hover:text-white hover:border-[#e10600] rounded-[2px] outline-none appearance-none cursor-pointer transition-colors" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='4' viewBox='0 0 8 4'%3E%3Cpath d='M1 1l3 2 3-2' stroke='%23888888' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 6px center' }}
-                        >
-                          <option value={c2Driver} className="bg-[var(--bg-secondary)] text-white">DRIVER: {c2Driver}</option>
-                          {driverOptions.filter(d => d !== c2Driver).map(d => (
-                            <option key={d} value={d} className="bg-[var(--bg-secondary)] text-white">DRIVER: {d}</option>
-                          ))}
-                        </select>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-white font-mono font-bold text-[14px] uppercase select-none">DRIVER:</span>
+                          <select
+                            value={c2Driver}
+                            onChange={(e) => setC2Driver(e.target.value)}
+                            className="bg-[var(--bg-primary)] border border-[var(--border-color)] pl-2.5 pr-10 py-1 text-[14px] font-mono text-[var(--color-muted)] hover:text-white hover:border-[#e10600] rounded-[2px] outline-none appearance-none cursor-pointer transition-colors" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='4' viewBox='0 0 8 4'%3E%3Cpath d='M1 1l3 2 3-2' stroke='%23888888' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
+                          >
+                            <option value={c2Driver} className="bg-[var(--bg-secondary)] text-white">{c2Driver}</option>
+                            {driverOptions.filter(d => d !== c2Driver).map(d => (
+                              <option key={d} value={d} className="bg-[var(--bg-secondary)] text-white">{d}</option>
+                            ))}
+                          </select>
+                        </div>
                         
-                        <select
-                          value={c2Lap}
-                          onChange={(e) => setC2Lap(Number(e.target.value))}
-                          className="bg-[var(--bg-primary)] border border-[var(--border-color)] pl-2 pr-6 py-1 text-[14px] font-mono text-[var(--color-muted)] hover:text-white hover:border-[#e10600] rounded-[2px] outline-none appearance-none cursor-pointer transition-colors" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='4' viewBox='0 0 8 4'%3E%3Cpath d='M1 1l3 2 3-2' stroke='%23888888' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 6px center' }}
-                        >
-                          <option value={c2Lap} className="bg-[var(--bg-secondary)] text-white">LAP: {String(c2Lap).padStart(2, '0')}</option>
-                          {lapOptions.filter(l => l !== c2Lap).map(l => (
-                            <option key={l} value={l} className="bg-[var(--bg-secondary)] text-white">LAP: {String(l).padStart(2, '0')}</option>
-                          ))}
-                        </select>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-white font-mono font-bold text-[14px] uppercase select-none">LAP:</span>
+                          <select
+                            value={c2Lap}
+                            onChange={(e) => setC2Lap(Number(e.target.value))}
+                            className="bg-[var(--bg-primary)] border border-[var(--border-color)] pl-2.5 pr-10 py-1 text-[14px] font-mono text-[var(--color-muted)] hover:text-white hover:border-[#e10600] rounded-[2px] outline-none appearance-none cursor-pointer transition-colors" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='4' viewBox='0 0 8 4'%3E%3Cpath d='M1 1l3 2 3-2' stroke='%23888888' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
+                          >
+                            <option value={c2Lap} className="bg-[var(--bg-secondary)] text-white">{String(c2Lap).padStart(2, '0')}</option>
+                            {lapOptions.filter(l => l !== c2Lap).map(l => (
+                              <option key={l} value={l} className="bg-[var(--bg-secondary)] text-white">{String(l).padStart(2, '0')}</option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
                     </header>
                     <div className="flex-grow bg-[var(--bg-primary)] technical-grid relative p-6 flex flex-col">
@@ -799,27 +859,33 @@ export default function TelemetryPage() {
                       <div className="flex gap-2">
                         <div className="bg-[var(--bg-primary)] border border-[var(--border-color)] px-2.5 py-1 text-[14px] font-mono text-[var(--color-muted)] rounded-[2px] uppercase">CHART: PEDAL</div>
                         
-                        <select
-                          value={c3Driver}
-                          onChange={(e) => setC3Driver(e.target.value)}
-                          className="bg-[var(--bg-primary)] border border-[var(--border-color)] pl-2 pr-6 py-1 text-[14px] font-mono text-[var(--color-muted)] hover:text-white hover:border-[#e10600] rounded-[2px] outline-none appearance-none cursor-pointer transition-colors" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='4' viewBox='0 0 8 4'%3E%3Cpath d='M1 1l3 2 3-2' stroke='%23888888' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 6px center' }}
-                        >
-                          <option value={c3Driver} className="bg-[var(--bg-secondary)] text-white">DRIVER: {c3Driver}</option>
-                          {driverOptions.filter(d => d !== c3Driver).map(d => (
-                            <option key={d} value={d} className="bg-[var(--bg-secondary)] text-white">DRIVER: {d}</option>
-                          ))}
-                        </select>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-white font-mono font-bold text-[14px] uppercase select-none">DRIVER:</span>
+                          <select
+                            value={c3Driver}
+                            onChange={(e) => setC3Driver(e.target.value)}
+                            className="bg-[var(--bg-primary)] border border-[var(--border-color)] pl-2.5 pr-10 py-1 text-[14px] font-mono text-[var(--color-muted)] hover:text-white hover:border-[#e10600] rounded-[2px] outline-none appearance-none cursor-pointer transition-colors" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='4' viewBox='0 0 8 4'%3E%3Cpath d='M1 1l3 2 3-2' stroke='%23888888' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
+                          >
+                            <option value={c3Driver} className="bg-[var(--bg-secondary)] text-white">{c3Driver}</option>
+                            {driverOptions.filter(d => d !== c3Driver).map(d => (
+                              <option key={d} value={d} className="bg-[var(--bg-secondary)] text-white">{d}</option>
+                            ))}
+                          </select>
+                        </div>
                         
-                        <select
-                          value={c3Lap}
-                          onChange={(e) => setC3Lap(Number(e.target.value))}
-                          className="bg-[var(--bg-primary)] border border-[var(--border-color)] pl-2 pr-6 py-1 text-[14px] font-mono text-[var(--color-muted)] hover:text-white hover:border-[#e10600] rounded-[2px] outline-none appearance-none cursor-pointer transition-colors" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='4' viewBox='0 0 8 4'%3E%3Cpath d='M1 1l3 2 3-2' stroke='%23888888' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 6px center' }}
-                        >
-                          <option value={c3Lap} className="bg-[var(--bg-secondary)] text-white">LAP: {String(c3Lap).padStart(2, '0')}</option>
-                          {lapOptions.filter(l => l !== c3Lap).map(l => (
-                            <option key={l} value={l} className="bg-[var(--bg-secondary)] text-white">LAP: {String(l).padStart(2, '0')}</option>
-                          ))}
-                        </select>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-white font-mono font-bold text-[14px] uppercase select-none">LAP:</span>
+                          <select
+                            value={c3Lap}
+                            onChange={(e) => setC3Lap(Number(e.target.value))}
+                            className="bg-[var(--bg-primary)] border border-[var(--border-color)] pl-2.5 pr-10 py-1 text-[14px] font-mono text-[var(--color-muted)] hover:text-white hover:border-[#e10600] rounded-[2px] outline-none appearance-none cursor-pointer transition-colors" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='4' viewBox='0 0 8 4'%3E%3Cpath d='M1 1l3 2 3-2' stroke='%23888888' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
+                          >
+                            <option value={c3Lap} className="bg-[var(--bg-secondary)] text-white">{String(c3Lap).padStart(2, '0')}</option>
+                            {lapOptions.filter(l => l !== c3Lap).map(l => (
+                              <option key={l} value={l} className="bg-[var(--bg-secondary)] text-white">{String(l).padStart(2, '0')}</option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
                     </header>
                     <div className="flex-grow bg-[var(--bg-primary)] technical-grid relative p-6 flex flex-col">
@@ -856,27 +922,33 @@ export default function TelemetryPage() {
                       <div className="flex gap-2">
                         <div className="bg-[var(--bg-primary)] border border-[var(--border-color)] px-2.5 py-1 text-[14px] font-mono text-[var(--color-muted)] rounded-[2px] uppercase">CHART: RPM</div>
                         
-                        <select
-                          value={c4Driver}
-                          onChange={(e) => setC4Driver(e.target.value)}
-                          className="bg-[var(--bg-primary)] border border-[var(--border-color)] pl-2 pr-6 py-1 text-[14px] font-mono text-[var(--color-muted)] hover:text-white hover:border-[#e10600] rounded-[2px] outline-none appearance-none cursor-pointer transition-colors" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='4' viewBox='0 0 8 4'%3E%3Cpath d='M1 1l3 2 3-2' stroke='%23888888' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 6px center' }}
-                        >
-                          <option value={c4Driver} className="bg-[var(--bg-secondary)] text-white">DRIVER: {c4Driver}</option>
-                          {driverOptions.filter(d => d !== c4Driver).map(d => (
-                            <option key={d} value={d} className="bg-[var(--bg-secondary)] text-white">DRIVER: {d}</option>
-                          ))}
-                        </select>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-white font-mono font-bold text-[14px] uppercase select-none">DRIVER:</span>
+                          <select
+                            value={c4Driver}
+                            onChange={(e) => setC4Driver(e.target.value)}
+                            className="bg-[var(--bg-primary)] border border-[var(--border-color)] pl-2.5 pr-10 py-1 text-[14px] font-mono text-[var(--color-muted)] hover:text-white hover:border-[#e10600] rounded-[2px] outline-none appearance-none cursor-pointer transition-colors" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='4' viewBox='0 0 8 4'%3E%3Cpath d='M1 1l3 2 3-2' stroke='%23888888' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
+                          >
+                            <option value={c4Driver} className="bg-[var(--bg-secondary)] text-white">{c4Driver}</option>
+                            {driverOptions.filter(d => d !== c4Driver).map(d => (
+                              <option key={d} value={d} className="bg-[var(--bg-secondary)] text-white">{d}</option>
+                            ))}
+                          </select>
+                        </div>
                         
-                        <select
-                          value={c4Lap}
-                          onChange={(e) => setC4Lap(Number(e.target.value))}
-                          className="bg-[var(--bg-primary)] border border-[var(--border-color)] pl-2 pr-6 py-1 text-[14px] font-mono text-[var(--color-muted)] hover:text-white hover:border-[#e10600] rounded-[2px] outline-none appearance-none cursor-pointer transition-colors" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='4' viewBox='0 0 8 4'%3E%3Cpath d='M1 1l3 2 3-2' stroke='%23888888' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 6px center' }}
-                        >
-                          <option value={c4Lap} className="bg-[var(--bg-secondary)] text-white">LAP: {String(c4Lap).padStart(2, '0')}</option>
-                          {lapOptions.filter(l => l !== c4Lap).map(l => (
-                            <option key={l} value={l} className="bg-[var(--bg-secondary)] text-white">LAP: {String(l).padStart(2, '0')}</option>
-                          ))}
-                        </select>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-white font-mono font-bold text-[14px] uppercase select-none">LAP:</span>
+                          <select
+                            value={c4Lap}
+                            onChange={(e) => setC4Lap(Number(e.target.value))}
+                            className="bg-[var(--bg-primary)] border border-[var(--border-color)] pl-2.5 pr-10 py-1 text-[14px] font-mono text-[var(--color-muted)] hover:text-white hover:border-[#e10600] rounded-[2px] outline-none appearance-none cursor-pointer transition-colors" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='4' viewBox='0 0 8 4'%3E%3Cpath d='M1 1l3 2 3-2' stroke='%23888888' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
+                          >
+                            <option value={c4Lap} className="bg-[var(--bg-secondary)] text-white">{String(c4Lap).padStart(2, '0')}</option>
+                            {lapOptions.filter(l => l !== c4Lap).map(l => (
+                              <option key={l} value={l} className="bg-[var(--bg-secondary)] text-white">{String(l).padStart(2, '0')}</option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
                     </header>
                     <div className="flex-grow bg-[var(--bg-primary)] technical-grid relative p-6 flex flex-col">
@@ -906,7 +978,7 @@ export default function TelemetryPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   
                   {/* Graph 5: G-FORCE */}
-                  <section className="bg-[var(--bg-secondary)] border border-[var(--border-color)] flex flex-col h-[520px] rounded-[2px] overflow-hidden">
+                  <section className="bg-[var(--bg-secondary)] border border-[var(--border-color)] flex flex-col min-h-[520px] rounded-[2px] overflow-hidden">
                     <header className="p-4 border-b border-[var(--border-color)] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                       <div className="flex items-center gap-2">
                         <div className="w-1 h-4 bg-[#c6c5d7]"></div>
@@ -917,46 +989,52 @@ export default function TelemetryPage() {
                       <div className="flex gap-2">
                         <div className="bg-[var(--bg-primary)] border border-[var(--border-color)] px-2.5 py-1 text-[14px] font-mono text-[var(--color-muted)] rounded-[2px] uppercase">CHART: G-FORCE</div>
                         
-                        <select
-                          value={c5Driver}
-                          onChange={(e) => setC5Driver(e.target.value)}
-                          className="bg-[var(--bg-primary)] border border-[var(--border-color)] pl-2 pr-6 py-1 text-[14px] font-mono text-[var(--color-muted)] hover:text-white hover:border-[#e10600] rounded-[2px] outline-none appearance-none cursor-pointer transition-colors" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='4' viewBox='0 0 8 4'%3E%3Cpath d='M1 1l3 2 3-2' stroke='%23888888' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 6px center' }}
-                        >
-                          <option value={c5Driver} className="bg-[var(--bg-secondary)] text-white">DRIVER: {c5Driver}</option>
-                          {driverOptions.filter(d => d !== c5Driver).map(d => (
-                            <option key={d} value={d} className="bg-[var(--bg-secondary)] text-white">DRIVER: {d}</option>
-                          ))}
-                        </select>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-white font-mono font-bold text-[14px] uppercase select-none">DRIVER:</span>
+                          <select
+                            value={c5Driver}
+                            onChange={(e) => setC5Driver(e.target.value)}
+                            className="bg-[var(--bg-primary)] border border-[var(--border-color)] pl-2.5 pr-10 py-1 text-[14px] font-mono text-[var(--color-muted)] hover:text-white hover:border-[#e10600] rounded-[2px] outline-none appearance-none cursor-pointer transition-colors" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='4' viewBox='0 0 8 4'%3E%3Cpath d='M1 1l3 2 3-2' stroke='%23888888' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
+                          >
+                            <option value={c5Driver} className="bg-[var(--bg-secondary)] text-white">{c5Driver}</option>
+                            {driverOptions.filter(d => d !== c5Driver).map(d => (
+                              <option key={d} value={d} className="bg-[var(--bg-secondary)] text-white">{d}</option>
+                            ))}
+                          </select>
+                        </div>
                         
-                        <select
-                          value={c5Lap}
-                          onChange={(e) => setC5Lap(Number(e.target.value))}
-                          className="bg-[var(--bg-primary)] border border-[var(--border-color)] pl-2 pr-6 py-1 text-[14px] font-mono text-[var(--color-muted)] hover:text-white hover:border-[#e10600] rounded-[2px] outline-none appearance-none cursor-pointer transition-colors" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='4' viewBox='0 0 8 4'%3E%3Cpath d='M1 1l3 2 3-2' stroke='%23888888' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 6px center' }}
-                        >
-                          <option value={c5Lap} className="bg-[var(--bg-secondary)] text-white">LAP: {String(c5Lap).padStart(2, '0')}</option>
-                          {lapOptions.filter(l => l !== c5Lap).map(l => (
-                            <option key={l} value={l} className="bg-[var(--bg-secondary)] text-white">LAP: {String(l).padStart(2, '0')}</option>
-                          ))}
-                        </select>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-white font-mono font-bold text-[14px] uppercase select-none">LAP:</span>
+                          <select
+                            value={c5Lap}
+                            onChange={(e) => setC5Lap(Number(e.target.value))}
+                            className="bg-[var(--bg-primary)] border border-[var(--border-color)] pl-2.5 pr-10 py-1 text-[14px] font-mono text-[var(--color-muted)] hover:text-white hover:border-[#e10600] rounded-[2px] outline-none appearance-none cursor-pointer transition-colors" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='4' viewBox='0 0 8 4'%3E%3Cpath d='M1 1l3 2 3-2' stroke='%23888888' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
+                          >
+                            <option value={c5Lap} className="bg-[var(--bg-secondary)] text-white">{String(c5Lap).padStart(2, '0')}</option>
+                            {lapOptions.filter(l => l !== c5Lap).map(l => (
+                              <option key={l} value={l} className="bg-[var(--bg-secondary)] text-white">{String(l).padStart(2, '0')}</option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
                     </header>
-                    <div className="flex-grow bg-[var(--bg-primary)] technical-grid relative flex items-center justify-center p-8">
+                    <div className="flex-grow bg-[var(--bg-primary)] technical-grid p-6 flex flex-col xl:flex-row items-center justify-center gap-6 overflow-hidden">
                       {/* G-Force Radar Layout */}
-                      <div className="relative w-72 h-72 flex items-center justify-center">
+                      <div className="relative flex-shrink-0 flex items-center justify-center" style={{ width: '240px', height: '240px' }}>
                         {/* Concentric circles */}
-                        <div className="absolute w-72 h-72 border border-[var(--border-color)] rounded-full pointer-events-none"></div>
-                        <div className="absolute w-54 h-54 border border-[var(--border-color)] rounded-full pointer-events-none"></div>
-                        <div className="absolute w-36 h-36 border border-[var(--border-color)] rounded-full pointer-events-none"></div>
-                        <div className="absolute w-18 h-18 border border-[var(--border-color)] rounded-full pointer-events-none"></div>
+                        <div className="absolute border border-[var(--border-color)] rounded-full pointer-events-none" style={{ width: '240px', height: '240px' }}></div>
+                        <div className="absolute border border-[var(--border-color)] rounded-full pointer-events-none" style={{ width: '180px', height: '180px' }}></div>
+                        <div className="absolute border border-[var(--border-color)] rounded-full pointer-events-none" style={{ width: '120px', height: '120px' }}></div>
+                        <div className="absolute border border-[var(--border-color)] rounded-full pointer-events-none" style={{ width: '60px', height: '60px' }}></div>
                         
                         {/* Crosshairs */}
                         <div className="absolute w-full h-[1px] bg-[var(--border-color)]/80 pointer-events-none"></div>
                         <div className="absolute h-full w-[1px] bg-[var(--border-color)]/80 pointer-events-none"></div>
                         
-                        <span className="absolute top-2 text-[13px] font-bold text-[#454655] uppercase tracking-wider">LONG +</span>
-                        <span className="absolute bottom-2 text-[13px] font-bold text-[#454655] uppercase tracking-wider">LONG -</span>
-                        <span className="absolute right-2 text-[13px] font-bold text-[#454655] uppercase tracking-wider">LAT +</span>
-                        <span className="absolute left-2 text-[13px] font-bold text-[#454655] uppercase tracking-wider">LAT -</span>
+                        <span className="absolute top-1 text-[11px] font-bold text-[#454655] uppercase tracking-wider">LONG +</span>
+                        <span className="absolute bottom-1 text-[11px] font-bold text-[#454655] uppercase tracking-wider">LONG -</span>
+                        <span className="absolute right-1 text-[11px] font-bold text-[#454655] uppercase tracking-wider">LAT +</span>
+                        <span className="absolute left-1 text-[11px] font-bold text-[#454655] uppercase tracking-wider">LAT -</span>
                         
                         {/* Functional Radar Plot */}
                         <div className="absolute inset-0 z-10">
@@ -964,11 +1042,47 @@ export default function TelemetryPage() {
                             <ScatterChart margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
                               <XAxis type="number" dataKey="lat" domain={[-4, 4]} hide />
                               <YAxis type="number" dataKey="long" domain={[-4, 4]} hide />
-                              <Tooltip cursor={{ strokeDasharray: '3 3' }} contentStyle={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)', fontSize: 14, fontFamily: 'monospace' }} />
-                              <Scatter name="G-Force Trace" data={getGForceData(c5Driver, c5Lap)} fill="#e10600" line={false} />
+                              <Tooltip cursor={{ strokeDasharray: '3 3' }} contentStyle={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)', fontSize: 12, fontFamily: 'monospace' }} />
+                              <Scatter name="G-Force Radar" data={getGForceData(c5Driver, c5Lap)} fill="#e10600" line={false} />
                             </ScatterChart>
                           </ResponsiveContainer>
                         </div>
+                      </div>
+
+                      {/* G-Force Trace Time-Series Plot */}
+                      <div className="flex-grow w-full min-w-[240px]" style={{ height: '240px' }}>
+                        <div className="flex justify-between text-[#454655] text-[12px] font-bold mb-1.5">
+                          <span>Y: G-LOAD [-6G..+6G]</span>
+                          <span>X: TIME [ms]</span>
+                        </div>
+                        <ResponsiveContainer width="100%" height="90%">
+                          <AreaChart data={getGForceTraceData(c5Driver, c5Lap)} margin={{ left: -25, right: 5, top: 5, bottom: 0 }}>
+                            <defs>
+                              <linearGradient id="gforceGradTelemetry" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#29b6f6" stopOpacity={0.25}/>
+                                <stop offset="95%" stopColor="#29b6f6" stopOpacity={0}/>
+                              </linearGradient>
+                              <linearGradient id="gforceLatGradTelemetry" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#ab47bc" stopOpacity={0.25}/>
+                                <stop offset="95%" stopColor="#ab47bc" stopOpacity={0}/>
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="2 2" stroke="var(--border-color)" />
+                            <XAxis dataKey="time" hide />
+                            <YAxis stroke="#444552" domain={[-6, 6]} fontSize={11} />
+                            <Tooltip
+                              contentStyle={{ backgroundColor: 'var(--bg-secondary)', borderColor: '#1e1e2e', fontSize: '11px', fontFamily: 'monospace' }}
+                              formatter={(v, name) => [
+                                `${v} G`,
+                                name === 'longG' ? 'Longitudinal G' : name === 'latG' ? 'Lateral G' : name
+                              ]}
+                            />
+                            <Legend verticalAlign="top" height={24} iconSize={6} wrapperStyle={{ fontSize: 11, fontFamily: 'monospace' }} />
+                            <ReferenceLine y={0} stroke="#444552" strokeWidth={1} strokeDasharray="3 3" />
+                            <Area type="monotone" dataKey="longG" stroke="#29b6f6" strokeWidth={1.5} fillOpacity={0.6} fill="url(#gforceGradTelemetry)" name="longG" />
+                            <Area type="monotone" dataKey="latG" stroke="#ab47bc" strokeWidth={1.5} fillOpacity={0.4} fill="url(#gforceLatGradTelemetry)" name="latG" />
+                          </AreaChart>
+                        </ResponsiveContainer>
                       </div>
                     </div>
                     <footer className="p-3 border-t border-[var(--border-color)] bg-[var(--bg-secondary)] flex justify-end">
@@ -988,27 +1102,33 @@ export default function TelemetryPage() {
                       <div className="flex gap-2">
                         <div className="bg-[var(--bg-primary)] border border-[var(--border-color)] px-2.5 py-1 text-[14px] font-mono text-[var(--color-muted)] rounded-[2px] uppercase">CHART: SIGN</div>
                         
-                        <select
-                          value={c6Driver}
-                          onChange={(e) => setC6Driver(e.target.value)}
-                          className="bg-[var(--bg-primary)] border border-[var(--border-color)] pl-2 pr-6 py-1 text-[14px] font-mono text-[var(--color-muted)] hover:text-white hover:border-[#e10600] rounded-[2px] outline-none appearance-none cursor-pointer transition-colors" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='4' viewBox='0 0 8 4'%3E%3Cpath d='M1 1l3 2 3-2' stroke='%23888888' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 6px center' }}
-                        >
-                          <option value={c6Driver} className="bg-[var(--bg-secondary)] text-white">DRIVER: {c6Driver}</option>
-                          {driverOptions.filter(d => d !== c6Driver).map(d => (
-                            <option key={d} value={d} className="bg-[var(--bg-secondary)] text-white">DRIVER: {d}</option>
-                          ))}
-                        </select>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-white font-mono font-bold text-[14px] uppercase select-none">DRIVER:</span>
+                          <select
+                            value={c6Driver}
+                            onChange={(e) => setC6Driver(e.target.value)}
+                            className="bg-[var(--bg-primary)] border border-[var(--border-color)] pl-2.5 pr-10 py-1 text-[14px] font-mono text-[var(--color-muted)] hover:text-white hover:border-[#e10600] rounded-[2px] outline-none appearance-none cursor-pointer transition-colors" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='4' viewBox='0 0 8 4'%3E%3Cpath d='M1 1l3 2 3-2' stroke='%23888888' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
+                          >
+                            <option value={c6Driver} className="bg-[var(--bg-secondary)] text-white">{c6Driver}</option>
+                            {driverOptions.filter(d => d !== c6Driver).map(d => (
+                              <option key={d} value={d} className="bg-[var(--bg-secondary)] text-white">{d}</option>
+                            ))}
+                          </select>
+                        </div>
                         
-                        <select
-                          value={c6Lap}
-                          onChange={(e) => setC6Lap(Number(e.target.value))}
-                          className="bg-[var(--bg-primary)] border border-[var(--border-color)] pl-2 pr-6 py-1 text-[14px] font-mono text-[var(--color-muted)] hover:text-white hover:border-[#e10600] rounded-[2px] outline-none appearance-none cursor-pointer transition-colors" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='4' viewBox='0 0 8 4'%3E%3Cpath d='M1 1l3 2 3-2' stroke='%23888888' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 6px center' }}
-                        >
-                          <option value={c6Lap} className="bg-[var(--bg-secondary)] text-white">LAP: {String(c6Lap).padStart(2, '0')}</option>
-                          {lapOptions.filter(l => l !== c6Lap).map(l => (
-                            <option key={l} value={l} className="bg-[var(--bg-secondary)] text-white">LAP: {String(l).padStart(2, '0')}</option>
-                          ))}
-                        </select>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-white font-mono font-bold text-[14px] uppercase select-none">LAP:</span>
+                          <select
+                            value={c6Lap}
+                            onChange={(e) => setC6Lap(Number(e.target.value))}
+                            className="bg-[var(--bg-primary)] border border-[var(--border-color)] pl-2.5 pr-10 py-1 text-[14px] font-mono text-[var(--color-muted)] hover:text-white hover:border-[#e10600] rounded-[2px] outline-none appearance-none cursor-pointer transition-colors" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='4' viewBox='0 0 8 4'%3E%3Cpath d='M1 1l3 2 3-2' stroke='%23888888' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
+                          >
+                            <option value={c6Lap} className="bg-[var(--bg-secondary)] text-white">{String(c6Lap).padStart(2, '0')}</option>
+                            {lapOptions.filter(l => l !== c6Lap).map(l => (
+                              <option key={l} value={l} className="bg-[var(--bg-secondary)] text-white">{String(l).padStart(2, '0')}</option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
                     </header>
                     <div className="flex-grow bg-[var(--bg-primary)] technical-grid relative p-6 flex flex-col">
@@ -1049,27 +1169,33 @@ export default function TelemetryPage() {
                       <div className="flex gap-2">
                         <div className="bg-[var(--bg-primary)] border border-[var(--border-color)] px-2.5 py-1 text-[14px] font-mono text-[var(--color-muted)] rounded-[2px] uppercase">CHART: TYRE</div>
                         
-                        <select
-                          value={c7Driver}
-                          onChange={(e) => setC7Driver(e.target.value)}
-                          className="bg-[var(--bg-primary)] border border-[var(--border-color)] pl-2 pr-6 py-1 text-[14px] font-mono text-[var(--color-muted)] hover:text-white hover:border-[#e10600] rounded-[2px] outline-none appearance-none cursor-pointer transition-colors" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='4' viewBox='0 0 8 4'%3E%3Cpath d='M1 1l3 2 3-2' stroke='%23888888' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 6px center' }}
-                        >
-                          <option value={c7Driver} className="bg-[var(--bg-secondary)] text-white">DRIVER: {c7Driver}</option>
-                          {driverOptions.filter(d => d !== c7Driver).map(d => (
-                            <option key={d} value={d} className="bg-[var(--bg-secondary)] text-white">DRIVER: {d}</option>
-                          ))}
-                        </select>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-white font-mono font-bold text-[14px] uppercase select-none">DRIVER:</span>
+                          <select
+                            value={c7Driver}
+                            onChange={(e) => setC7Driver(e.target.value)}
+                            className="bg-[var(--bg-primary)] border border-[var(--border-color)] pl-2.5 pr-10 py-1 text-[14px] font-mono text-[var(--color-muted)] hover:text-white hover:border-[#e10600] rounded-[2px] outline-none appearance-none cursor-pointer transition-colors" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='4' viewBox='0 0 8 4'%3E%3Cpath d='M1 1l3 2 3-2' stroke='%23888888' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
+                          >
+                            <option value={c7Driver} className="bg-[var(--bg-secondary)] text-white">{c7Driver}</option>
+                            {driverOptions.filter(d => d !== c7Driver).map(d => (
+                              <option key={d} value={d} className="bg-[var(--bg-secondary)] text-white">{d}</option>
+                            ))}
+                          </select>
+                        </div>
                         
-                        <select
-                          value={c7Compound}
-                          onChange={(e) => setC7Compound(e.target.value)}
-                          className="bg-[var(--bg-primary)] border border-[var(--border-color)] pl-2 pr-6 py-1 text-[14px] font-mono text-[var(--color-muted)] hover:text-white hover:border-[#e10600] rounded-[2px] outline-none appearance-none cursor-pointer transition-colors" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='4' viewBox='0 0 8 4'%3E%3Cpath d='M1 1l3 2 3-2' stroke='%23888888' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 6px center' }}
-                        >
-                          <option value={c7Compound} className="bg-[var(--bg-secondary)] text-white">COMP: {c7Compound}</option>
-                          {compoundOptions.filter(c => c !== c7Compound).map(c => (
-                            <option key={c} value={c} className="bg-[var(--bg-secondary)] text-white">COMP: {c}</option>
-                          ))}
-                        </select>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-white font-mono font-bold text-[14px] uppercase select-none">COMP:</span>
+                          <select
+                            value={c7Compound}
+                            onChange={(e) => setC7Compound(e.target.value)}
+                            className="bg-[var(--bg-primary)] border border-[var(--border-color)] pl-2.5 pr-10 py-1 text-[14px] font-mono text-[var(--color-muted)] hover:text-white hover:border-[#e10600] rounded-[2px] outline-none appearance-none cursor-pointer transition-colors" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='4' viewBox='0 0 8 4'%3E%3Cpath d='M1 1l3 2 3-2' stroke='%23888888' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
+                          >
+                            <option value={c7Compound} className="bg-[var(--bg-secondary)] text-white">{c7Compound}</option>
+                            {compoundOptions.filter(c => c !== c7Compound).map(c => (
+                              <option key={c} value={c} className="bg-[var(--bg-secondary)] text-white">{c}</option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
                     </header>
                     <div className="flex-grow bg-[var(--bg-primary)] technical-grid relative p-6 flex flex-col">
@@ -1109,27 +1235,33 @@ export default function TelemetryPage() {
                       <div className="flex gap-2">
                         <div className="bg-[var(--bg-primary)] border border-[var(--border-color)] px-2.5 py-1 text-[14px] font-mono text-[var(--color-muted)] rounded-[2px] uppercase">CHART: BRAKE</div>
                         
-                        <select
-                          value={c8Driver}
-                          onChange={(e) => setC8Driver(e.target.value)}
-                          className="bg-[var(--bg-primary)] border border-[var(--border-color)] pl-2 pr-6 py-1 text-[14px] font-mono text-[var(--color-muted)] hover:text-white hover:border-[#e10600] rounded-[2px] outline-none appearance-none cursor-pointer transition-colors" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='4' viewBox='0 0 8 4'%3E%3Cpath d='M1 1l3 2 3-2' stroke='%23888888' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 6px center' }}
-                        >
-                          <option value={c8Driver} className="bg-[var(--bg-secondary)] text-white">DRIVER: {c8Driver}</option>
-                          {driverOptions.filter(d => d !== c8Driver).map(d => (
-                            <option key={d} value={d} className="bg-[var(--bg-secondary)] text-white">DRIVER: {d}</option>
-                          ))}
-                        </select>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-white font-mono font-bold text-[14px] uppercase select-none">DRIVER:</span>
+                          <select
+                            value={c8Driver}
+                            onChange={(e) => setC8Driver(e.target.value)}
+                            className="bg-[var(--bg-primary)] border border-[var(--border-color)] pl-2.5 pr-10 py-1 text-[14px] font-mono text-[var(--color-muted)] hover:text-white hover:border-[#e10600] rounded-[2px] outline-none appearance-none cursor-pointer transition-colors" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='4' viewBox='0 0 8 4'%3E%3Cpath d='M1 1l3 2 3-2' stroke='%23888888' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
+                          >
+                            <option value={c8Driver} className="bg-[var(--bg-secondary)] text-white">{c8Driver}</option>
+                            {driverOptions.filter(d => d !== c8Driver).map(d => (
+                              <option key={d} value={d} className="bg-[var(--bg-secondary)] text-white">{d}</option>
+                            ))}
+                          </select>
+                        </div>
                         
-                        <select
-                          value={c8Lap}
-                          onChange={(e) => setC8Lap(Number(e.target.value))}
-                          className="bg-[var(--bg-primary)] border border-[var(--border-color)] pl-2 pr-6 py-1 text-[14px] font-mono text-[var(--color-muted)] hover:text-white hover:border-[#e10600] rounded-[2px] outline-none appearance-none cursor-pointer transition-colors" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='4' viewBox='0 0 8 4'%3E%3Cpath d='M1 1l3 2 3-2' stroke='%23888888' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 6px center' }}
-                        >
-                          <option value={c8Lap} className="bg-[var(--bg-secondary)] text-white">LAP: {String(c8Lap).padStart(2, '0')}</option>
-                          {lapOptions.filter(l => l !== c8Lap).map(l => (
-                            <option key={l} value={l} className="bg-[var(--bg-secondary)] text-white">LAP: {String(l).padStart(2, '0')}</option>
-                          ))}
-                        </select>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-white font-mono font-bold text-[14px] uppercase select-none">LAP:</span>
+                          <select
+                            value={c8Lap}
+                            onChange={(e) => setC8Lap(Number(e.target.value))}
+                            className="bg-[var(--bg-primary)] border border-[var(--border-color)] pl-2.5 pr-10 py-1 text-[14px] font-mono text-[var(--color-muted)] hover:text-white hover:border-[#e10600] rounded-[2px] outline-none appearance-none cursor-pointer transition-colors" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='4' viewBox='0 0 8 4'%3E%3Cpath d='M1 1l3 2 3-2' stroke='%23888888' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
+                          >
+                            <option value={c8Lap} className="bg-[var(--bg-secondary)] text-white">{String(c8Lap).padStart(2, '0')}</option>
+                            {lapOptions.filter(l => l !== c8Lap).map(l => (
+                              <option key={l} value={l} className="bg-[var(--bg-secondary)] text-white">{String(l).padStart(2, '0')}</option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
                     </header>
                     <div className="flex-grow bg-[var(--bg-primary)] technical-grid relative p-8 flex items-center">

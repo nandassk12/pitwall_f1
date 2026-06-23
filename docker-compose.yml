@@ -4,9 +4,16 @@ services:
   backend:
     build: ./backend
     ports:
-      - "8000:8000"
+      - "7860:7860"
+    restart: unless-stopped
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE: ${VITE_API_BASE:-http://localhost:7860}
     ports:
       - "3000:3000"
+    depends_on:
+      - backend
+    restart: unless-stopped
