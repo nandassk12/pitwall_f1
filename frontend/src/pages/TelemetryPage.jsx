@@ -544,6 +544,10 @@ export default function TelemetryPage() {
       });
   }, [c8Driver, sessionLoaded]);
 
+  const driverOptions = drivers.length > 0 ? drivers.map((d) => d.name) : ['VER', 'HAM', 'LEC', 'NOR', 'SAI', 'RUS', 'PIA', 'ALO', 'GAS', 'TSU', 'ALB', 'HUL', 'MAG', 'BOT', 'ZHO', 'OCO', 'STR', 'SAR'];
+  const lapOptions = Array.from({ length: 53 }, (_, i) => i + 1);
+  const compoundOptions = ['SOFT', 'MEDIUM', 'HARD', 'INTER', 'WET'];
+
   const getSeed = () => 0;
   const getSpeedTraceData = () => speedData;
   const getGearShiftsData = () => gearShiftsData;
